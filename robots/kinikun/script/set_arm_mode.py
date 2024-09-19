@@ -2,6 +2,7 @@
 import rospy
 import yaml
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Vector3
 
 def load_yaml_file(file_path):
     """YAMLファイルを読み込み、パラメータを設定する関数"""
@@ -10,22 +11,24 @@ def load_yaml_file(file_path):
             yaml_data = yaml.safe_load(yaml_file)
             if 'parameters' in yaml_data:
                 params = yaml_data['parameters']
+                p1_value = float(params['p1_value'])
+                p2_value = float(params['p2_value'])
                 rospy.set_param('/p1_value', params['p1_value'])
                 rospy.set_param('/p2_value', params['p2_value'])
                 # YAMLから取得したangle値をfloatに変換して返す
                 angle = float(params['angle'])
                 rospy.set_param('/angle', angle)
-                rospy.loginfo(f"Parameters set: p1_value={params['p1_value']}, p2_value={params['p2_value']}, angle={angle}")
-                return angle  # angle値を返す
+                rospy.loginfo(f"Parameters set: p1_value={p1_value}, p2_value={p2_value}, angle={angle}")
+                return p1_value, p2_value, angle
             else:
                 rospy.logwarn("YAML file does not contain 'parameters' field.")
-                return None
+                return None, None, None
     except (FileNotFoundError, ValueError) as e:
         rospy.logwarn(f"YAML file not found or invalid format: {file_path}. Using default parameters.")
-        return None
+        return None, None, None
     except yaml.YAMLError as e:
         rospy.logerr(f"Error loading YAML file: {e}")
-        return None
+        return None, None, None
 
 def main():
     # ROSノードの初期化
@@ -48,16 +51,23 @@ def main():
     if yaml_file_path:
         rospy.loginfo(f"Loading parameters from: {yaml_file_path}")
         # YAMLファイルを読み込んでパラメータを設定
-        angle = load_yaml_file(yaml_file_path)
+        p1_value, p2_value, angle = load_yaml_file(yaml_file_path)
     else:
         rospy.loginfo("No YAML file provided. Using default angle.")
-        angle = default_angle
+        p1_value, p2_value, angle = default_p1, default_p2, default_angle
 
     # 値がNoneでないことを確認してfloat型に変換
-    if angle is None:
+    if angle is None or p1_value is None or p2_value is None:
         angle = default_angle
+        p1_value = default_p1
+        p2_value = default_p2
     else:
         angle = float(angle)
+        p1_value = float(p1_value)
+        p2_value = float(p2_value)
+
+    v1_value = p1_value * 4096 / 0.9
+    v2_value = p2_value * 4096 / 0.9
 
     # JointStateメッセージを準備してトピックに一度だけPublish
     pub = rospy.Publisher('/quadrotor/joints_ctrl', JointState, queue_size=10)
@@ -69,11 +79,21 @@ def main():
     joint_state_msg.velocity = [0.0]  # 速度を0に設定
     joint_state_msg.effort = [0.0]  # 力を0に設定
 
+    pub_v1v2 = rospy.Publisher('mpa_cmd', Vector3, queue_size=10)
+
+    mpa_cmd_msg = Vector3()
+    mpa_cmd_msg.x = v1_value
+    mpa_cmd_msg.y = v2_value
+
     # 1回だけPublishして終了
-    rospy.sleep(1)  # 少し待ってからパブリッシュ
+    rospy.sleep(1)  
     joint_state_msg.header.stamp = rospy.Time.now()
     pub.publish(joint_state_msg)
     rospy.loginfo(f"Published angle: {angle} for arm1_joint")
+
+    pub_v1v2.publish(mpa_cmd_msg)
+    rospy.loginfo(f"Published V1={v1_value}, V2={v2_value}")
+
     
     rospy.sleep(1)  # 終了前に少し待機
 
