@@ -46,7 +46,6 @@ void mpaCmdCallback(const geometry_msgs::Vector3& msg) {
   noInterrupts();
   V1 = msg.x;
   V2 = msg.y;
-  digitalWrite(LED_BUILTIN, HIGH-digitalRead(LED_BUILTIN));
   interrupts();
 }
 
@@ -100,7 +99,6 @@ void setup()
   MsTimer2::start();           // タイマー割り込み開始
   commandtime = millis() + 5000;   
 
-  pinMode(LED_BUILTIN, OUTPUT);
   
 
   nh.initNode();
