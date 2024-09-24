@@ -70,11 +70,11 @@ def main():
     v2_value = p2_value * 4096 / 0.9
 
     # JointStateメッセージを準備してトピックに一度だけPublish
-    pub = rospy.Publisher('/quadrotor/joints_ctrl', JointState, queue_size=10)
+    pub = rospy.Publisher('/quadrotor/joint_states', JointState, queue_size=10)
 
     # JointStateメッセージを作成
     joint_state_msg = JointState()
-    joint_state_msg.name = ['arm1_joint']  # 対象のジョイント名
+    joint_state_msg.name = ['arm3_joint']  # 対象のジョイント名
     joint_state_msg.position = [angle]  # 指定された角度 (必ずfloat型に変換)
     joint_state_msg.velocity = [0.0]  # 速度を0に設定
     joint_state_msg.effort = [0.0]  # 力を0に設定
@@ -89,7 +89,7 @@ def main():
     rospy.sleep(1)  
     joint_state_msg.header.stamp = rospy.Time.now()
     pub.publish(joint_state_msg)
-    rospy.loginfo(f"Published angle: {angle} for arm1_joint")
+    rospy.loginfo(f"Published angle: {angle} for arm3_joint")
 
     pub_v1v2.publish(mpa_cmd_msg)
     rospy.loginfo(f"Published V1={v1_value}, V2={v2_value}")
