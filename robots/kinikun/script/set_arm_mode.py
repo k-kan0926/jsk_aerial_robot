@@ -37,7 +37,7 @@ def main():
     # デフォルトのパラメータを設定
     default_p1 = 0.3
     default_p2 = 0.3
-    default_angle = -0.1  # デフォルトの角度
+    default_angle = 0.0  # デフォルトの角度
 
     rospy.set_param('/p1_value', default_p1)  # デフォルトのp1_value
     rospy.set_param('/p2_value', default_p2)  # デフォルトのp2_value
@@ -70,7 +70,7 @@ def main():
     v2_value = p2_value * 4096 / 0.9
 
     # JointStateメッセージを準備してトピックに一度だけPublish
-    pub = rospy.Publisher('/quadrotor/joint_states', JointState, queue_size=10)
+    pub = rospy.Publisher('/quadrotor3/joint_states', JointState, queue_size=10)
 
     # JointStateメッセージを作成
     joint_state_msg = JointState()
