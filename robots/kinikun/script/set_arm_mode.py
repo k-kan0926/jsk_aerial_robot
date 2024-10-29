@@ -70,7 +70,7 @@ def main():
     v2_value = p2_value * 4096 / 0.9
 
     # JointStateメッセージを準備してトピックに一度だけPublish
-    pub = rospy.Publisher('/quadrotor3/joint_states', JointState, queue_size=10)
+    pub = rospy.Publisher('/quadrotor/joint_states', JointState, queue_size=10)
 
     # JointStateメッセージを作成
     joint_state_msg = JointState()
