@@ -169,16 +169,16 @@
   <link name="arm1_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <mass value="0.1"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <geometry>
-  <box size="0.19 0.015 0.005"/>
+  <box size="0.21 0.015 0.005"/>
       </geometry>
     </visual>
   </link>
@@ -186,7 +186,7 @@
  <joint name="rotor1" type="continuous">
    <parent link="arm1_link"/>
    <child link="thrust1"/>
-   <origin xyz="0.175 0 0 " rpy="0 0 0"/>
+   <origin xyz="0.19 0 0 " rpy="0 0 0"/>
    <axis xyz="0 0 -1"/>
    <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5"/>
   </joint>
@@ -234,23 +234,23 @@
   <link name="arm2_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <mass value="0.1"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <geometry>
-  <box size="0.19 0.015 0.005"/>
+  <box size="0.21 0.015 0.005"/>
       </geometry>
     </visual>
   </link>
  <joint name="rotor2" type="continuous">
    <parent link="arm2_link"/>
    <child link="thrust2"/>
-   <origin xyz="0.175 0 0 " rpy="0 0 0"/>
+   <origin xyz="0.19 0 0 " rpy="0 0 0"/>
    <axis xyz="0 0 1"/>
    <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5"/>
   </joint>
@@ -286,7 +286,7 @@
     </transmission>
 
  <joint name="arm3_joint" type="revolute">
-    <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5"/>
+    <limit lower="${-pi/3}" upper="${pi/3}" effort="10.0" velocity="0.5"/>
     <parent link="main_body"/>
     <child link="arm3_link"/>
     <origin xyz="0.03 0.03 0" rpy="0 0 ${ pi / 4}"/>
@@ -297,16 +297,16 @@
   <link name="arm3_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <mass value="0.1"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <geometry>
-  <box size="0.19 0.015 0.005"/>
+  <box size="0.21 0.015 0.005"/>
       </geometry>
     </visual>
   </link>
@@ -314,7 +314,7 @@
  <joint name="rotor3" type="continuous">
    <parent link="arm3_link"/>
    <child link="thrust3"/>
-   <origin xyz="0.175 0 0 " rpy="0 0 0"/>
+   <origin xyz="0.19 0 0 " rpy="0 0 0"/>
    <axis xyz="0 0 -1"/>
    <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5"/>
   </joint>
@@ -374,23 +374,23 @@
   <link name="arm4_link">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <mass value="0.1"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="${0.19 / 2 - 0.004} 0 0" rpy="0 0 0"/>
+      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
       <geometry>
-  <box size="0.19 0.015 0.005"/>
+  <box size="0.21 0.015 0.005"/>
       </geometry>
     </visual>
   </link>
  <joint name="rotor4" type="continuous">
    <parent link="arm4_link"/>
    <child link="thrust4"/>
-   <origin xyz="0.175 0 0 " rpy="0 0 0"/>
+   <origin xyz="0.19 0 0 " rpy="0 0 0"/>
    <axis xyz="0 0 1"/>
    <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5"/>
   </joint>

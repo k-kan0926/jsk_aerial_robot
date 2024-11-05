@@ -2,4 +2,4 @@ parameters:
   p1_value: 0.5  # p1の値
   p2_value: 0.1  # p2の値
   # angle: 0.0    # 角度
-  angle: 0.34    # 角度
+  angle: 0.72    # 角度
