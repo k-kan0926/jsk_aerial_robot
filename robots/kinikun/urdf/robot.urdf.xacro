@@ -223,8 +223,8 @@
       </actuator>
     </transmission>
 
-<joint name="arm2_joint" type="fixed">
-    <!-- <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5"/> -->
+<joint name="arm2_joint" type="revolute">
+    <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5"/>
     <parent link="main_body"/>
     <child link="arm2_link"/>
     <origin xyz="0.03 -0.03 0" rpy="0 0 ${- pi / 4}"/>
@@ -235,7 +235,7 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
       <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
-      <mass value="0.1"/>
+      <mass value="0.2"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
@@ -284,6 +284,18 @@
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>
     </transmission>
+        <transmission name="joint_tran2">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="arm2_joint">
+          <!-- TODO: effort is torque, maybe position is enough -->
+          <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="servo2">
+          <!-- TODO: effort is torque, maybe position is enough -->
+          <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+          <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
 
  <joint name="arm3_joint" type="revolute">
     <limit lower="${-pi/3}" upper="${pi/3}" effort="10.0" velocity="0.5"/>
@@ -298,7 +310,7 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
       <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
-      <mass value="0.1"/>
+      <mass value="0.2"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>

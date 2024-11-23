@@ -49,7 +49,7 @@ class Angular_Diff_Publisher:
             joint_state_msg1.header.stamp = rospy.Time.now()
 
             joint_state_msg2 = JointState()
-            joint_state_msg2.name = ['arm4_joint']
+            joint_state_msg2.name = ['arm2_joint']
             joint_state_msg2.position = [self.filtered_angular_diff2]
             joint_state_msg2.header.stamp = rospy.Time.now()
 
