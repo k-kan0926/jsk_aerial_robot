@@ -21,6 +21,10 @@ servo_controller:
       id: 0
       name: arm3_joint
       angle_sgn: -1
+    controller2:
+      id: 1
+      name: arm2_joint
+      angle_sgn: -1
       #angle_max: 1.58 # you can specify for each controller
 
       #simulaton:  # you can specify for each controller
