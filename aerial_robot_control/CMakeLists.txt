@@ -85,6 +85,11 @@ add_library (trajectory_generation
   )
 target_link_libraries (trajectory_generation ${catkin_LIBRARIES})
 
+### pid angle controller 追加 ### 変更点
+add_library(pid_angle_controller
+  src/control/pid_angle_controller.cpp
+)
+
 add_executable(trajectory_generation_node src/trajectory/test.cpp)
 target_link_libraries (trajectory_generation_node ${catkin_LIBRARIES} trajectory_generation)
 
