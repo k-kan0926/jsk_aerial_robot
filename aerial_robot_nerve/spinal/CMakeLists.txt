@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(spinal)
 
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -38,6 +38,7 @@ add_message_files(
   MotorInfo.msg
   PwmInfo.msg
   Pwms.msg
+  PwmTest.msg
   UavInfo.msg
   DesireCoord.msg
   FlightConfigCmd.msg
