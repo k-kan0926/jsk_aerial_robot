@@ -380,6 +380,7 @@ void AttitudeController::reset(void)
     {
       target_thrust_[i] = 0;
       target_pwm_[i] = IDLE_DUTY;
+      pwm_test_value_[i] = IDLE_DUTY;
 
       base_thrust_term_[i] = 0;
       roll_pitch_term_[i] = 0;
@@ -653,10 +654,60 @@ void AttitudeController::maxYawGainIndex()
     }
 }
 
-void AttitudeController::pwmTestCallback(const std_msgs::Float32& pwm_msg)
+void AttitudeController::pwmTestCallback(const spinal::PwmTest& pwm_msg)
 {
-  pwm_test_flag_ = true;
-  pwm_test_value_ = pwm_msg.data; //2000ms
+#ifndef SIMULATION  
+  if(pwm_msg.pwms_length && !pwm_test_flag_)
+    {
+      pwm_test_flag_ = true;
+      nh_->logwarn("Enter pwm test mode");
+    }
+  else if(!pwm_msg.pwms_length && pwm_test_flag_)
+    {
+      pwm_test_flag_ = false;
+      nh_->logwarn("Escape from pwm test mode");
+      return;
+    }
+
+  if(pwm_msg.motor_index_length)
+    {
+      /*Individual test mode*/
+      if(pwm_msg.motor_index_length != pwm_msg.pwms_length)
+        {
+          nh_->logerror("The number of index does not match the number of pwms.");
+          return;
+        }
+      for(int i = 0; i < pwm_msg.motor_index_length; i++){
+        int motor_index = pwm_msg.motor_index[i];
+                /*fail safe*/
+        if (pwm_msg.pwms[i] >= IDLE_DUTY && pwm_msg.pwms[i] <= MAX_PWM)
+          {
+            pwm_test_value_[motor_index] = pwm_msg.pwms[i];
+          }
+        else
+          {
+            nh_->logwarn("FAIL SAFE!  Invaild PWM value for motor");
+            pwm_test_value_[motor_index] = IDLE_DUTY;
+          }
+      }
+    }
+  else
+    {
+      /*Simultaneous test mode*/
+      for(int i = 0; i < MAX_MOTOR_NUMBER; i++){
+        /*fail safe*/
+        if (pwm_msg.pwms[0] >= IDLE_DUTY && pwm_msg.pwms[0] <= MAX_PWM)
+          {
+            pwm_test_value_[i] = pwm_msg.pwms[0];
+          }
+        else
+          {
+            nh_->logwarn("FAIL SAFE!  Invaild PWM value for motors");
+            pwm_test_value_[i] = IDLE_DUTY;
+          }
+      }
+    }
+#endif
 }
 
 void AttitudeController::setStartControlFlag(bool start_control_flag)
@@ -801,7 +852,7 @@ void AttitudeController::pwmConversion()
     {
       for(int i = 0; i < MAX_MOTOR_NUMBER; i++)
         {
-          target_pwm_[i] = pwm_test_value_;
+          target_pwm_[i] = pwm_test_value_[i];
         }
       return;
     }
