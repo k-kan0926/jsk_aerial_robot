@@ -447,8 +447,6 @@ void BaseNavigator::joyStickControl(const sensor_msgs::JoyConstPtr & joy_msg)
 
       setNaviState(LAND_STATE);
       //update
-      setTargetXyFromCurrentState();
-      setTargetYawFromCurrentState();
       ROS_INFO("Joy Control: Land state");
 
       return;
@@ -682,65 +680,66 @@ void BaseNavigator::update()
       if(normal_land && !force_att_control_flag_)
         {
           setNaviState(LAND_STATE);
-          setTargetXyFromCurrentState();
-          setTargetYawFromCurrentState();
         }
     }
 
   /* update the target pos and velocity */
   if (trajectory_mode_)
     {
-      if (traj_generator_ptr_.get() == nullptr)
+      if(getNaviState() == HOVER_STATE)
         {
-          if (ros::Time::now().toSec() > trajectory_reset_time_)
+          if (traj_generator_ptr_.get() == nullptr)
             {
-              setTargetZeroVel();
-              setTargetZeroAcc();
+              if (ros::Time::now().toSec() > trajectory_reset_time_)
+                {
+                  setTargetZeroVel();
+                  setTargetZeroAcc();
 
-              setTargetZeroOmega();
-              setTargetZeroAngAcc();
+                  setTargetZeroOmega();
+                  setTargetZeroAngAcc();
 
-              trajectory_mode_ = false;
+                  trajectory_mode_ = false;
 
-              ROS_INFO("[Flight nav] stop trajectory mode in POS-VEL mode");
-            }
-        }
-      else
-        {
-          // trajectory following mode
-          double t = ros::Time::now().toSec();
-          double end_t = traj_generator_ptr_->getEndSetpoint().state.t;
-          if (t > end_t)
-            {
-              ROS_INFO("[Nav] reach the end of trajectory");
-
-              setTargetZeroVel();
-              setTargetZeroAcc();
-
-              setTargetZeroOmega();
-              setTargetZeroAngAcc();
-
-              trajectory_mode_ = false;
-
-              traj_generator_ptr_.reset();
+                  ROS_INFO("[Flight nav] stop trajectory mode in POS-VEL mode");
+                }
             }
           else
             {
-              agi::QuadState target_state = traj_generator_ptr_->getState(t);
-              setTargetPos(tf::Vector3(target_state.p(0), target_state.p(1), target_state.p(2)));
-              setTargetVel(tf::Vector3(target_state.v(0), target_state.v(1), target_state.v(2)));
-              setTargetAcc(tf::Vector3(target_state.a(0), target_state.a(1), target_state.a(2)));
+              // trajectory following mode
+              double t = ros::Time::now().toSec();
+              double end_t = traj_generator_ptr_->getEndSetpoint().state.t;
+              if (t > end_t)
+                {
+                  ROS_INFO("[Nav] reach the end of trajectory");
 
-              double target_yaw = target_state.getYaw();
-              double target_omega_z = target_state.w(2);
-              double target_ang_acc_z = target_state.tau(2);
-              setTargetYaw(target_yaw);
-              setTargetOmegaZ(target_omega_z);
-              setTargetAngAccZ(target_ang_acc_z);
+                  setTargetZeroVel();
+                  setTargetZeroAcc();
 
-              tf::Vector3 curr_pos = estimator_->getPos(Frame::COG, estimate_mode_);
-              double yaw_angle = estimator_->getState(State::YAW_COG, estimate_mode_)[0];
-              ROS_INFO_THROTTLE(0.5, "[Nav] trajectory mode, target pos&yaw: [%f, %f, %f, %f], curr pos&yaw: [%f, %f, %f, %f]", target_state.p(0), target_state.p(1), target_state.p(2), target_yaw, curr_pos.x(), curr_pos.y(), curr_pos.z(), yaw_angle);
+                  setTargetZeroOmega();
+                  setTargetZeroAngAcc();
+
+                   trajectory_mode_ = false;
+
+                  traj_generator_ptr_.reset();
+                }
+              else
+                {
+                  agi::QuadState target_state = traj_generator_ptr_->getState(t);
+                  setTargetPos(tf::Vector3(target_state.p(0), target_state.p(1), target_state.p(2)));
+                  setTargetVel(tf::Vector3(target_state.v(0), target_state.v(1), target_state.v(2)));
+                  setTargetAcc(tf::Vector3(target_state.a(0), target_state.a(1), target_state.a(2)));
+
+                  double target_yaw = target_state.getYaw();
+                  double target_omega_z = target_state.w(2);
+                  double target_ang_acc_z = target_state.tau(2);
+                  setTargetYaw(target_yaw);
+                  setTargetOmegaZ(target_omega_z);
+                  setTargetAngAccZ(target_ang_acc_z);
+
+                  tf::Vector3 curr_pos = estimator_->getPos(Frame::COG, estimate_mode_);
+                  double yaw_angle = estimator_->getState(State::YAW_COG, estimate_mode_)[0];
+                  ROS_INFO_THROTTLE(0.5, "[Nav] trajectory mode, target pos&yaw: [%f, %f, %f, %f], curr pos&yaw: [%f, %f, %f, %f]", target_state.p(0), target_state.p(1), target_state.p(2), target_yaw, curr_pos.x(), curr_pos.y(), curr_pos.z(), yaw_angle);
+                }
             }
         }
     }
@@ -1006,7 +1005,10 @@ void BaseNavigator::generateNewTrajectory(geometry_msgs::PoseStamped pose)
     }
 
   double du_tran = (end_state.p - start_state.p).norm() / trajectory_mean_vel_;
-  double du_rot = fabs(end_state.getYaw() - start_state.getYaw()) / trajectory_mean_yaw_rate_;
+  double delta_yaw = end_state.getYaw() - start_state.getYaw();
+  if (delta_yaw > M_PI) delta_yaw -= 2 * M_PI;
+  if (delta_yaw < -M_PI) delta_yaw += 2 * M_PI;
+  double du_rot = fabs(delta_yaw) / trajectory_mean_yaw_rate_;
   double du = std::max(du_tran, trajectory_min_du_);
   if (!enable_latch_yaw_trajectory_)
     {
@@ -1054,9 +1056,20 @@ void BaseNavigator::rosParamInit()
   ros::NodeHandle nh(nh_, "navigation");
   getParam<int>(nh, "xy_control_mode", xy_control_mode_, 0);
   getParam<double>(nh, "takeoff_height", takeoff_height_, 0.0);
+
   getParam<double>(nh, "land_descend_vel",land_descend_vel_, -0.3);
+  if (land_descend_vel_ >= 0) {
+    ROS_WARN("land_descend_vel_ (current value: %f) should be negative", land_descend_vel_);
+    land_descend_vel_ == -0.3;
+  }
+
   getParam<double>(nh, "hover_convergent_duration", hover_convergent_duration_, 1.0);
   getParam<double>(nh, "land_check_duration", land_check_duration_, 0.5);
+  if (land_check_duration_ < 0.5) {
+    ROS_WARN("land_check_duration_ (current value: %f) should be not smaller than 0.5", land_check_duration_);
+    land_check_duration_ = 0.5;
+  }
+
   getParam<double>(nh, "trajectory_reset_duration", trajectory_reset_duration_, 0.5);
   getParam<double>(nh, "teleop_reset_duration", teleop_reset_duration_, 0.5);
   getParam<double>(nh, "z_convergent_thresh", z_convergent_thresh_, 0.05);
