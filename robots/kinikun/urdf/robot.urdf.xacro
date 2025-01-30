@@ -235,7 +235,7 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
       <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
-      <mass value="0.160"/>
+      <mass value="0.200"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
@@ -310,7 +310,7 @@
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <inertial>
       <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0"/>
-      <mass value="0.160"/>
+      <mass value="0.200"/>
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>

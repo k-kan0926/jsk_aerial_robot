@@ -1,6 +1,8 @@
 import rospy
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Vector3
+from sensor_msgs.msg import JointState
+
 
 class TargetAnglePIDController:
     def __init__(self):

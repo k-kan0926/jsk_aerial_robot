@@ -3,7 +3,12 @@ project(kinikun)
 
 find_package(catkin REQUIRED COMPONENTS
   mujoco_ros_control
+  dynamic_reconfigure
   )
+
+generate_dynamic_reconfigure_options(
+  config/PID.cfg
+)
 
 catkin_package(
   CATKIN_DEPENDS aerial_robot_control aerial_robot_estimation aerial_robot_model
