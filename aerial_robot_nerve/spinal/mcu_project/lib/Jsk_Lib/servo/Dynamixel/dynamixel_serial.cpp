@@ -3,10 +3,15 @@
 
 namespace
 {
+
+#if STM32H7_V2
+  uint8_t rx_buf_[RX_BUFFER_SIZE] __attribute__((section(".ServoRxBufferSection")));
+#else
 #ifdef STM32H7
   uint8_t rx_buf_[RX_BUFFER_SIZE] __attribute__((section(".GpsRxBufferSection")));
 #else
   uint8_t rx_buf_[RX_BUFFER_SIZE];
+#endif
 #endif
 }
 void DynamixelSerial::init(UART_HandleTypeDef* huart, osMutexId* mutex)
@@ -79,18 +84,23 @@ void DynamixelSerial::init(UART_HandleTypeDef* huart, osMutexId* mutex)
 
 
         //initialize encoder: only can support one encoder
-        // encoder_handler_.init(hi2c); // Magnetic Encoder
-
+#ifndef SPINAL
+        encoder_handler_.init(hi2c); // Magnetic Encoder
+#endif
 	for (int i = 0; i < MAX_SERVO_NUM; i++) {
           servo_[i].hardware_error_status_ = 0;
           if(servo_[i].servo_resolution_ == 65535 || servo_[i].joint_resolution_ == 65535){
+#ifndef SPINAL
             if(servo_[i].external_encoder_flag_)
               servo_[i].hardware_error_status_ = 1 << RESOLUTION_RATIO_ERROR;  // 0b01000000;
+#endif
             servo_[i].resolution_ratio_ = 1;
           }
           else{
             servo_[i].resolution_ratio_ = (float)servo_[i].servo_resolution_ / (float)servo_[i].joint_resolution_;
+#ifndef SPINAL
             if(servo_[i].external_encoder_flag_) encoder_handler_.setOffset(servo_[i].joint_offset_);
+#endif
           }
 	}
 
@@ -134,8 +144,10 @@ void DynamixelSerial::setHomingOffset(uint8_t servo_index)
 {
   if(servo_[servo_index].external_encoder_flag_){
 	servo_[servo_index].joint_offset_ = servo_[servo_index].calib_value_ + servo_[servo_index].joint_offset_ - servo_[servo_index].present_position_;
-	// servo_[servo_index].joint_offset_ = servo_[servo_index].calib_value_; // debug
+#ifndef SPINAL
+	servo_[servo_index].joint_offset_ = servo_[servo_index].calib_value_; // debug
 	encoder_handler_.setOffset(servo_[servo_index].joint_offset_);
+#endif
 	servo_[servo_index].first_get_pos_flag_ = true;
 	FlashMemory::erase();
 	FlashMemory::write();
@@ -219,6 +231,21 @@ uint8_t DynamixelSerial::getServoIndex(uint8_t id)
 
 void DynamixelSerial::update()
 {
+  /* receive data process */
+  /* For one round, change from "send -> receive" to " receive -> send" */
+  /* This setting can accelerate the receiving process */
+  if(read_status_packet_flag_) {
+    for (unsigned int i = 0; i < servo_num_; i++) {
+      if(!servo_[i].send_data_flag_ && !servo_[i].first_get_pos_flag_) continue;
+      readStatusPacket(instruction_last_.first);
+    }
+    if (instruction_last_.first == INST_GET_PRESENT_POS)
+    {
+      setROSCommFlag(true);
+    }
+  }
+  read_status_packet_flag_ = false;
+
   uint32_t current_time = HAL_GetTick();
 
   /* send position command to servo */
@@ -312,7 +339,6 @@ void DynamixelSerial::update()
   std::pair<uint8_t, uint8_t> instruction;
   while(instruction_buffer_.pop(instruction))
     {
-      bool read_status_packet_flag = false;
       uint8_t servo_index = instruction.second;
 
       if (mutex_ != NULL)  osMutexWait(*mutex_, osWaitForever);
@@ -400,49 +426,46 @@ void DynamixelSerial::update()
         switch (instruction.first) {
         case INST_GET_PRESENT_POS: /* read servo position(angle) */
           cmdSyncReadPresentPosition(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_PRESENT_CURRENT: /* read servo load */
           cmdSyncReadPresentCurrent(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_PRESENT_TEMPERATURE: /* read servo temp */
           cmdSyncReadPresentTemperature(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_PRESENT_MOVING: /* read servo movement */
           cmdSyncReadMoving(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_HARDWARE_ERROR_STATUS:
           cmdSyncReadHardwareErrorStatus(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_HOMING_OFFSET:
           cmdSyncReadHomingOffset(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_POSITION_GAINS:
           cmdSyncReadPositionGains(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_PROFILE_VELOCITY:
           cmdSyncReadProfileVelocity(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         case INST_GET_CURRENT_LIMIT:
           cmdSyncReadCurrentLimit(false);
-          read_status_packet_flag = true;
+          read_status_packet_flag_ = true;
           break;
         default:
           break;
         }
-        /* receive data process */
-        if(read_status_packet_flag) {
-          for (unsigned int i = 0; i < servo_num_; i++) {
-            if(!servo_[i].send_data_flag_ && !servo_[i].first_get_pos_flag_) continue;
-            readStatusPacket(instruction.first);
-          }
+
+        if (read_status_packet_flag_) {
+          instruction_last_ = instruction;
         }
       }
 
@@ -656,6 +679,7 @@ int8_t DynamixelSerial::readStatusPacket(uint8_t status_packet_instruction)
 		if (s != servo_.end()) {
                   s->hardware_error_status_ &= ((1 << ENCODER_CONNECT_ERROR) - 1); // &= 0b01111111
                   if(s->external_encoder_flag_) {
+#ifndef SPINAL
                     encoder_handler_.update();
                     if(encoder_handler_.connected()) {
                       s->present_position_ = (int32_t)(encoder_handler_.getValue()); // use external encoder value instead of servo internal encoder value
@@ -670,6 +694,9 @@ int8_t DynamixelSerial::readStatusPacket(uint8_t status_packet_instruction)
                     else {
                       s->hardware_error_status_ |= 1 << ENCODER_CONNECT_ERROR; // |= 0b10000000:  encoder is not connected
                     }
+#else
+                    return 0;
+#endif
                   }
                   else {
                     if (s->first_get_pos_flag_) {
@@ -970,16 +997,26 @@ void DynamixelSerial::cmdSyncWriteLed()
 void DynamixelSerial::cmdSyncWritePositionGains()
 {
 	uint8_t parameters[INSTRUCTION_PACKET_SIZE];
-	for (unsigned int i = 0; i < servo_num_; i++) {
-		parameters[i * 6 + 0] = servo_[i].d_gain_ & 0xFF;
-		parameters[i * 6 + 1] = (servo_[i].d_gain_ >> 8) & 0xFF;
-		parameters[i * 6 + 2] = servo_[i].i_gain_ & 0xFF;
-		parameters[i * 6 + 3] = (servo_[i].i_gain_ >> 8) & 0xFF;
-		parameters[i * 6 + 4] = servo_[i].p_gain_ & 0xFF;
-		parameters[i * 6 + 5] = (servo_[i].p_gain_ >> 8) & 0xFF;
+        /*p_gain*/
+        for (unsigned int i = 0; i < servo_num_; i++) {
+          parameters[i * 2 + 0] = servo_[i].p_gain_ & 0xFF;
+          parameters[i * 2 + 1] = (servo_[i].p_gain_ >> 8) & 0xFF;
 	}
+	cmdSyncWrite(CTRL_POSITION_P_GAIN, parameters, 2);
 
-	cmdSyncWrite(CTRL_POSITION_D_GAIN, parameters, POSITION_GAINS_BYTE_LEN);
+        /*i_gain*/
+        for (unsigned int i = 0; i < servo_num_; i++) {
+          parameters[i * 2 + 0] = servo_[i].i_gain_ & 0xFF;
+          parameters[i * 2 + 1] = (servo_[i].i_gain_ >> 8) & 0xFF;
+	}
+	cmdSyncWrite(CTRL_POSITION_I_GAIN, parameters, 2);
+
+        /*d_gain*/
+        for (unsigned int i = 0; i < servo_num_; i++) {
+          parameters[i * 2 + 0] = servo_[i].d_gain_ & 0xFF;
+          parameters[i * 2 + 1] = (servo_[i].d_gain_ >> 8) & 0xFF;
+	}
+	cmdSyncWrite(CTRL_POSITION_D_GAIN, parameters, 2);
 }
 
 void DynamixelSerial::cmdSyncWriteProfileVelocity()

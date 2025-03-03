@@ -109,6 +109,7 @@ IMUOnboard imu_;
 #elif IMU_ICM
 ICM20948 imu_;
 #endif
+
 Baro baro_;
 GPS gps_;
 BatteryStatus battery_status_;
@@ -244,7 +245,7 @@ int main(void)
   IMU_ROS_CMD::addImu(&imu_);
   baro_.init(&hi2c1, &nh_, BAROCS_GPIO_Port, BAROCS_Pin);
   battery_status_.init(&hadc1, &nh_);
-#if GPS_FLAG  
+#if GPS_FLAG
   gps_.init(&huart3, &nh_, LED2_GPIO_Port, LED2_Pin);
   estimator_.init(&imu_, &baro_, &gps_, &nh_);  // imu + baro + gps => att + alt + pos(xy)
 #else 
@@ -310,7 +311,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of coreTask */
-  osThreadDef(coreTask, coreTaskFunc, osPriorityRealtime, 0, 1024);
+  osThreadDef(coreTask, coreTaskFunc, osPriorityRealtime, 0, 512);
   coreTaskHandle = osThreadCreate(osThread(coreTask), NULL);
 
   /* definition and creation of rosSpinTask */
@@ -747,7 +748,7 @@ static void MX_TIM1_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 10000;
+  sConfigOC.Pulse = 1000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
@@ -1229,8 +1230,8 @@ __weak void servoTaskCallback(void const * argument)
   {
 #if SERVO_FLAG
     servo_.update();
-    osDelay(1);
 #endif
+    osDelay(1);
   }
   /* USER CODE END servoTaskCallback */
 }
