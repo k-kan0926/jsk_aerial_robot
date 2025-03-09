@@ -11,7 +11,7 @@ class TargetAnglePIDController:
 
         # ROS Subscribers
         self.target_angle_sub = rospy.Subscriber('/target_angle', Float32, self.target_angle_callback)
-        self.current_angle_sub = rospy.Subscriber('/quadrotor/joint_states', JointState, self.current_angle_callback)
+        self.current_angle_sub = rospy.Subscriber('/kinikun/joint_states', JointState, self.current_angle_callback)
 
         # ROS Publisher
         self.p1p2_pub = rospy.Publisher('/p1p2_cmd', Vector3, queue_size=10)

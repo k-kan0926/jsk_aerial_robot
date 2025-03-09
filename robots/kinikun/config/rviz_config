@@ -58,25 +58,41 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        quadrotor/battery:
+        kinikun/battery:
           Value: true
-        quadrotor/cog:
+        kinikun/cog:
           Value: true
-        quadrotor/fc:
+        kinikun/fc:
           Value: true
-        quadrotor/main_body:
+        kinikun/main_body:
           Value: true
-        quadrotor/root:
+        kinikun/root:
           Value: true
-        quadrotor/thrust1:
+        kinikun/thrust1:
           Value: true
-        quadrotor/thrust2:
+        kinikun/thrust2:
           Value: true
-        quadrotor/thrust3:
+        kinikun/thrust3:
           Value: true
-        quadrotor/thrust4:
+        kinikun/thrust4:
           Value: true
         world:
+          Value: true
+        kinikun/arm1_link:
+          Value: true
+        kinikun/arm2_link:
+          Value: true
+        kinikun/arm3_link:
+          Value: true
+        kinikun/arm4_link:
+          Value: true
+        kinikun/dummy_gripper_1:
+          Value: true
+        kinikun/dummy_gripper_2:
+          Value: true
+        kinikun/dummy_gripper_3:
+          Value: true
+        kinikun/dummy_gripper_4:
           Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
@@ -86,22 +102,33 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          quadrotor/root:
-            quadrotor/cog:
+          kinikun/root:
+            kinikun/cog:
               {}
-            quadrotor/main_body:
-              quadrotor/battery:
+            kinikun/main_body:
+              kinikun/battery:
                 {}
-              quadrotor/fc:
+              kinikun/fc:
                 {}
-              quadrotor/thrust1:
-                {}
-              quadrotor/thrust2:
-                {}
-              quadrotor/thrust3:
-                {}
-              quadrotor/thrust4:
-                {}
+              kinikun/arm1_link:
+                kinikun/thrust1:
+                  {}
+              kinikun/arm2_link:
+                kinikun/thrust2:
+                  kinikun/dummy_gripper_1:
+                    {}
+                  kinikun/dummy_gripper_2:
+                    {}
+              kinikun/arm3_link:
+                kinikun/thrust3:
+                  kinikun/dummy_gripper_3:
+                    {}
+                  kinikun/dummy_gripper_4:
+                    {}
+              kinikun/arm4_link:
+                kinikun/thrust4:
+                  {}
+
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -152,9 +179,49 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        arm1_link:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        arm2_link:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        arm3_link:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        arm4_link:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        dummy_gripper_1:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        dummy_gripper_2:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        dummy_gripper_3:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
+        dummy_gripper_4:
+          Alpha: 1
+          show axes: false
+          show trail: false
+          Value: true
       Name: RobotModel
-      Robot Description: quadrotor/robot_description
-      TF Prefix: quadrotor
+      Robot Description: kinikun/robot_description
+      TF Prefix: kinikun
       Update Interval: 0
       Value: true
       Visual Enabled: true

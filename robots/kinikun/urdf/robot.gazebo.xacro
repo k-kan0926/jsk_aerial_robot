@@ -2,7 +2,7 @@
 <robot
     xmlns:xacro="http://www.ros.org/wiki/xacro" name="kinikun" >
 
-  <xacro:arg name="robot_name" default="quadrotor" />
+  <xacro:arg name="robot_name" default="kinikun" />
 
   <!-- robot urdf -->
   <xacro:include filename="$(find kinikun)/urdf/robot.urdf.xacro" />

@@ -9,7 +9,7 @@ class Angular_Diff_Publisher:
         self.arm1_pose_subscriber = rospy.Subscriber('arm1/ground_pose', Pose2D, self.store_arm1_angular)
         self.arm2_pose_subscriber = rospy.Subscriber('arm2/ground_pose', Pose2D, self.store_arm2_angular)
         self.body_pose_subscriber = rospy.Subscriber('body/ground_pose', Pose2D, self.store_body_angular)
-        self.angular_diff_publisher = rospy.Publisher('/quadrotor1/joint_states', JointState, queue_size=1)
+        self.angular_diff_publisher = rospy.Publisher('/kinikun1/joint_states', JointState, queue_size=1)
 
         # 角度差のフィルタ後の値を格納する変数
         self.filtered_angular_diff1 = None

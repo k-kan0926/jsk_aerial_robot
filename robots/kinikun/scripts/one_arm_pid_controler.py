@@ -24,7 +24,7 @@ class PIDController:
         self.server = Server(PIDConfig, self.dynamic_reconfigure_callback)
 
         # サブスクライバー
-        rospy.Subscriber('/quadrotor1/joint_states', JointState, self.joint_state_callback)
+        rospy.Subscriber('/kinikun1/joint_states', JointState, self.joint_state_callback)
         rospy.Subscriber('/target_angle', Float64, self.target_angle_callback)
 
         # パブリッシャー

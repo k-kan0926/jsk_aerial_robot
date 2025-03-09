@@ -3,7 +3,7 @@
 
   <arg name="real_machine" default="false" />
   <arg name="simulation" default="false" />
-  <arg name="robot_ns" default="quadrotor" />
+  <arg name="robot_ns" default="kinikun" />
   <arg name="robot_id" default="1" />
 
   <group ns="$(arg robot_ns)">

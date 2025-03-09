@@ -42,7 +42,7 @@ def main():
     rospy.init_node('param_loader', anonymous=True)
 
     # Publisherの設定
-    pub = rospy.Publisher('/quadrotor/joint_states', JointState, queue_size=10)
+    pub = rospy.Publisher('/kinikun/joint_states', JointState, queue_size=10)
     pub_v1v2 = rospy.Publisher('mpa_cmd', Vector3, queue_size=10)
 
     rate = rospy.Rate(FREQUENCY)  # 更新頻度で実行

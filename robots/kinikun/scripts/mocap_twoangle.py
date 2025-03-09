@@ -8,11 +8,11 @@ class Angular_Diff_Publisher:
     def __init__(self):
         self.arm1_pose_subscriber = rospy.Subscriber('arm1/ground_pose', Pose2D, self.store_arm1_angular)
         self.arm2_pose_subscriber = rospy.Subscriber('arm2/ground_pose', Pose2D, self.store_arm2_angular)        
-        self.body_pose_subscriber = rospy.Subscriber('/quadrotor1/mocap_node/mocap/ground_pose', Pose2D, self.store_body_angular)
+        self.body_pose_subscriber = rospy.Subscriber('/kinikun1/mocap_node/mocap/ground_pose', Pose2D, self.store_body_angular)
 
         # JointStateのパブリッシャーに変更
-        self.angular_diff_publisher = rospy.Publisher('/quadrotor1/joint_states', JointState, queue_size=1)
-        # self.angular_diff_publisher = rospy.Publisher('/quadrotor1/joints_ctrl', JointState, queue_size=1)
+        self.angular_diff_publisher = rospy.Publisher('/kinikun1/joint_states', JointState, queue_size=1)
+        # self.angular_diff_publisher = rospy.Publisher('/kinikun1/joints_ctrl', JointState, queue_size=1)
         self.arm1_angular, self.arm2_angular, self.body_angular = None, None, None
 
         self.timer = rospy.Timer(rospy.Duration(0.1), self.pub_angular_diff)
