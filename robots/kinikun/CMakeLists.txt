@@ -11,10 +11,10 @@ generate_dynamic_reconfigure_options(
 )
 
 catkin_package(
-  CATKIN_DEPENDS aerial_robot_control aerial_robot_estimation aerial_robot_model
+  CATKIN_DEPENDS aerial_robot_control aerial_robot_estimation aerial_robot_model dynamic_reconfigure
 )
 
-install(DIRECTORY config launch
+install(DIRECTORY config launch scripts 
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )
