@@ -65,23 +65,23 @@
   <!-- main_body -->
   <link name="main_body">
     <inertial>
-      <mass value="0.276" />
-      <origin xyz="0 0 0.017" rpy="0 0 0" />
+      <mass value="0.210" />
+      <origin xyz="0 0 0.018" rpy="0 0 0" />
       <inertia
-        ixx="0.0021" ixy="0" ixz="0"
-        iyy="0.0015" iyz="0"
-        izz="0.0032" />
+        ixx="0.000096398" ixy="0" ixz="0"
+        iyy="0.000098683" iyz="0"
+        izz="0.000157235" />
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/main_body.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun_main_body.dae" />
       </geometry>
     </visual>
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0" />
       <geometry>
-        <box size="0.28 0.28 0.072" />
+        <box size="0.1 0.1 0.080" />
       </geometry>
     </collision>
   </link>
@@ -98,7 +98,7 @@
     </inertial>
   </xacro:extra_module>
 
-  <!-- battery -->
+  <!-- battery
   <xacro:extra_module name="battery" parent="main_body" visible="1"
     model_url="package://kinikun/urdf/mesh/turnigy_3S_2200mAh.dae">
     <origin xyz="0.0105 0 -0.012" rpy="0 0 0" />
@@ -109,13 +109,13 @@
         ixx="0.0002" ixy="0.0" ixz="0.0"
         iyy="0.0002" iyz="0.0" izz="0.0002" />
     </inertial>
-  </xacro:extra_module>
+  </xacro:extra_module> -->
 
   <joint name="arm1_joint" type="fixed">
     <!-- <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5"/> -->
     <parent link="main_body" />
     <child link="arm1_link" />
-    <origin xyz="-0.03 -0.03 0" rpy="0 0 ${ -3*pi / 4}" />
+    <origin xyz="-0.03023 -0.03023 0.004" rpy="0 0 ${ -3*pi / 4}" />
     <axis xyz="0 0 1" />
     <dynamics damping="0.9" friction="0.05" />
   </joint>
@@ -123,16 +123,16 @@
   <link name="arm1_link">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <inertial>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
-      <mass value="0.12" />
+      <origin xyz="0.148 -0.004 0" rpy="0 0 0" />
+      <mass value="0.157" />
       <inertia
-        ixx="0.001804" iyy="0.017972" izz="0.019248"
-        ixy="0.000021" ixz="0.000372" iyz="0.000000" />
+        ixx="0.000100424" iyy="0.000408408" izz="0.000429299"
+        ixy="0" ixz="0.00004" iyz="0" />
     </inertial>
     <visual>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.21 0.015 0.005" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_R.dae" />
       </geometry>
     </visual>
   </link>
@@ -140,7 +140,7 @@
   <joint name="rotor1" type="continuous">
     <parent link="arm1_link" />
     <child link="thrust1" />
-    <origin xyz="0.19 0 0 " rpy="0 0 0" />
+    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
     <axis xyz="0 0 -1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
@@ -178,10 +178,10 @@
   </transmission>
 
   <joint name="arm2_joint" type="revolute">
-    <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5" />
+    <limit lower="${-pi/4}" upper="${pi/4}" effort="1.0" velocity="0.5" />
     <parent link="main_body" />
     <child link="arm2_link" />
-    <origin xyz="0.03 -0.03 0" rpy="0 0 ${- pi / 4}" />
+    <origin xyz="0.03023 -0.03023 0.004" rpy="0 0 ${- pi / 4}" />
     <axis xyz="0 0 1" />
     <dynamics damping="0.9" friction="0.05" />
   </joint>
@@ -189,16 +189,16 @@
   <link name="arm2_link">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <inertial>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
-      <mass value="0.200" />
+      <origin xyz="0.148 -0.004 0" rpy="0 0 0" />
+      <mass value="0.157" />
       <inertia
-        ixx="0.001804" iyy="0.017972" izz="0.019248"
-        ixy="0.000021" ixz="0.000372" iyz="0.000000" />
+        ixx="0.000100425" iyy="0.000408408" izz="0.000429300"
+        ixy="0" ixz="0.00004" iyz="0" />
     </inertial>
     <visual>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.21 0.015 0.005" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_L.dae" />
       </geometry>
     </visual>
   </link>
@@ -206,7 +206,7 @@
   <joint name="rotor2" type="continuous">
     <parent link="arm2_link" />
     <child link="thrust2" />
-    <origin xyz="0.19 0 0 " rpy="0 0 0" />
+    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
     <axis xyz="0 0 1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
@@ -257,10 +257,10 @@
   </transmission>
 
   <joint name="arm3_joint" type="revolute">
-    <limit lower="${-pi/3}" upper="${pi/3}" effort="10.0" velocity="0.5" />
+    <limit lower="${-pi/3}" upper="${pi/3}" effort="1.0" velocity="0.5" />
     <parent link="main_body" />
     <child link="arm3_link" />
-    <origin xyz="0.03 0.03 0" rpy="0 0 ${ pi / 4}" />
+    <origin xyz="0.03023 0.03023 0.004" rpy="0 0 ${ pi / 4}" />
     <axis xyz="0 0 1" />
     <dynamics damping="0.9" friction="0.05" />
   </joint>
@@ -268,16 +268,16 @@
   <link name="arm3_link">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <inertial>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
-      <mass value="0.200" />
+      <origin xyz="0.148 -0.004 0" rpy="0 0 0" />
+      <mass value="0.157" />
       <inertia
-        ixx="0.001804" iyy="0.017972" izz="0.019248"
-        ixy="0.000021" ixz="0.000372" iyz="0.000000" />
+        ixx="0.000100424" iyy="0.000408408" izz="0.000429299"
+        ixy="0" ixz="0.00004" iyz="0" />
     </inertial>
     <visual>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.21 0.015 0.005" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_R.dae" />
       </geometry>
     </visual>
   </link>
@@ -285,7 +285,7 @@
   <joint name="rotor3" type="continuous">
     <parent link="arm3_link" />
     <child link="thrust3" />
-    <origin xyz="0.19 0 0 " rpy="0 0 0" />
+    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
     <axis xyz="0 0 -1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
@@ -339,7 +339,7 @@
     <!-- <limit lower="${-pi/4}" upper="${pi/4}" effort="10.0" velocity="0.5"/> -->
     <parent link="main_body" />
     <child link="arm4_link" />
-    <origin xyz="-0.03 0.03 0" rpy="0 0 ${3* pi / 4}" />
+    <origin xyz="-0.03023 0.03023 0.004" rpy="0 0 ${3* pi / 4}" />
     <axis xyz="0 0 1" />
     <dynamics damping="0.9" friction="0.05" />
   </joint>
@@ -347,16 +347,16 @@
   <link name="arm4_link">
     <origin xyz="0 0 0" rpy="0 0 0" />
     <inertial>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
-      <mass value="0.12" />
+      <origin xyz="0.148 -0.004 0" rpy="0 0 0" />
+      <mass value="0.157" />
       <inertia
-        ixx="0.001804" iyy="0.017972" izz="0.019248"
-        ixy="0.000021" ixz="0.000372" iyz="0.000000" />
+        ixx="0.000100425" iyy="0.000408408" izz="0.000429300"
+        ixy="0" ixz="0.00004" iyz="0" />
     </inertial>
     <visual>
-      <origin xyz="${0.21 / 2 - 0.004} 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.21 0.015 0.005" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_L.dae" />
       </geometry>
     </visual>
   </link>
@@ -364,7 +364,7 @@
   <joint name="rotor4" type="continuous">
     <parent link="arm4_link" />
     <child link="thrust4" />
-    <origin xyz="0.19 0 0 " rpy="0 0 0" />
+    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
     <axis xyz="0 0 1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
@@ -406,7 +406,7 @@
     <child link="dummy_gripper_1" />
     <origin xyz="0.2 0.02 0" rpy="0 0 0" /> <!-- 位置を調整 -->
     <axis xyz="1 0 0"/>
-    <limit lower="0" upper="0" effort="0" velocity="0" />
+    <limit lower="0" upper="0.01" effort="0" velocity="0" />
     <dynamics damping="0.2" friction="0.02" />
   </joint>
   
@@ -418,12 +418,6 @@
           ixx="0.000001" ixy="0.0" ixz="0.0" 
           iyy="0.000001" iyz="0.0" izz="0.000002" />
     </inertial>
-    <collision>
-      <orgin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0 0"/>
       <geometry>
@@ -437,7 +431,7 @@
     <child link="dummy_gripper_2" />
     <origin xyz="0.2 -0.02 0" rpy="0 0 0" /> <!-- 位置を調整 -->
     <axis xyz="1 0 0"/>
-    <limit lower="0" upper="0" effort="0" velocity="0" />
+    <limit lower="0" upper="0.01" effort="0" velocity="0" />
     <dynamics damping="0.2" friction="0.02" />
   </joint>
 
@@ -447,12 +441,6 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000002" />
     </inertial>
-    <collision>
-      <orgin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0 0"/>
       <geometry>
@@ -467,7 +455,7 @@
     <child link="dummy_gripper_3" />
     <origin xyz="0.2 0.02 0" rpy="0 0 0" /> <!-- 位置を調整 -->
     <axis xyz="1 0 0"/>
-    <limit lower="0" upper="0" effort="0" velocity="0" />
+    <limit lower="0" upper="0.01" effort="0" velocity="0" />
     <dynamics damping="0.2" friction="0.02" />
   </joint>
   
@@ -477,12 +465,6 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000002" />
     </inertial>
-    <collision>
-      <orgin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0 0"/>
       <geometry>
@@ -496,7 +478,7 @@
     <child link="dummy_gripper_4" />
     <origin xyz="0.2 -0.02 0" rpy="0 0 0" /> <!-- 位置を調整 -->
     <axis xyz="1 0 0"/>
-    <limit lower="0" upper="0" effort="0" velocity="0" />
+    <limit lower="0" upper="0.01" effort="0" velocity="0" />
     <dynamics damping="0.2" friction="0.02" />
   </joint>
 
@@ -506,12 +488,6 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000002" />
     </inertial>
-    <collision>
-      <orgin xyz="0 0 0" rpy="0 0 0" />
-      <geometry>
-        <box size="0.01 0.01 0.01" />
-      </geometry>
-    </collision>
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0 0"/>
       <geometry>
