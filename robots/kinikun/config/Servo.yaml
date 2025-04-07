@@ -1,6 +1,6 @@
 servo_controller:
-  state_sub_topic: servo/states
-  ctrl_pub_topic: servo/target_states
+  # state_sub_topic: servo/states
+  # ctrl_pub_topic: servo/target_states
   # torque_pub_topic: servo/torque_enable
 
   joints:
@@ -19,11 +19,11 @@ servo_controller:
     # i.e. joint1 -> jointN
     controller1:
       id: 0
-      name: arm3_joint
+      name: arm2_joint
       angle_sgn: -1
     controller2:
       id: 1
-      name: arm2_joint
+      name: arm3_joint
       angle_sgn: -1
       #angle_max: 1.58 # you can specify for each controller
 
