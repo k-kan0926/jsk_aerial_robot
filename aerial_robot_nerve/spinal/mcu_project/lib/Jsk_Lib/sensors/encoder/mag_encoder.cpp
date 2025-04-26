@@ -9,13 +9,19 @@
 #error "Please define __cplusplus, because this is a c++ based file "
 #endif
 
-#include "mag_encoder.h"
+#include "sensors/encoder/mag_encoder.h"
+#include <string>
 
 MagEncoder::MagEncoder()
 {
 }
 
-void MagEncoder::init(I2C_HandleTypeDef* hi2c)
+MagEncoder::MagEncoder(const char * topic_name):
+  angle_pub_(topic_name, &angle_msg_)
+{
+}
+
+void MagEncoder::init(I2C_HandleTypeDef* hi2c, ros::NodeHandle* nh)
 {
   hi2c_ = hi2c;
   raw_encoder_value_ = 0;
