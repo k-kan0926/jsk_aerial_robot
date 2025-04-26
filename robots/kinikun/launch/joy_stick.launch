@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find aerial_robot_base)/launch/external_module/joy_stick.lacunh">
+    <arg name="robot_name" value="kinikun"/>
+  </include>
+
+  <node pkg="kinikun" type="joy_stick_instruction.py" name="joy_stick_instruction" output="screen"/>
+
+</launch>
