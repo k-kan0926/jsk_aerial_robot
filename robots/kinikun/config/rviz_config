@@ -58,8 +58,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        kinikun/battery:
-          Value: true
+        # kinikun/battery:
+        #   Value: true
         kinikun/cog:
           Value: true
         kinikun/fc:
@@ -86,14 +86,6 @@ Visualization Manager:
           Value: true
         kinikun/arm4_link:
           Value: true
-        kinikun/dummy_gripper_1:
-          Value: true
-        kinikun/dummy_gripper_2:
-          Value: true
-        kinikun/dummy_gripper_3:
-          Value: true
-        kinikun/dummy_gripper_4:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
       Name: TF
@@ -115,16 +107,10 @@ Visualization Manager:
                   {}
               kinikun/arm2_link:
                 kinikun/thrust2:
-                  kinikun/dummy_gripper_1:
-                    {}
-                  kinikun/dummy_gripper_2:
-                    {}
+                  {}
               kinikun/arm3_link:
                 kinikun/thrust3:
-                  kinikun/dummy_gripper_3:
-                    {}
-                  kinikun/dummy_gripper_4:
-                    {}
+                  {}
               kinikun/arm4_link:
                 kinikun/thrust4:
                   {}
@@ -141,11 +127,11 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        battery:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
+        # battery:
+        #   Alpha: 1
+        #   Show Axes: false
+        #   Show Trail: false
+        #   Value: true
         fc:
           Alpha: 1
           Show Axes: false
@@ -195,26 +181,6 @@ Visualization Manager:
           show trail: false
           Value: true
         arm4_link:
-          Alpha: 1
-          show axes: false
-          show trail: false
-          Value: true
-        dummy_gripper_1:
-          Alpha: 1
-          show axes: false
-          show trail: false
-          Value: true
-        dummy_gripper_2:
-          Alpha: 1
-          show axes: false
-          show trail: false
-          Value: true
-        dummy_gripper_3:
-          Alpha: 1
-          show axes: false
-          show trail: false
-          Value: true
-        dummy_gripper_4:
           Alpha: 1
           show axes: false
           show trail: false

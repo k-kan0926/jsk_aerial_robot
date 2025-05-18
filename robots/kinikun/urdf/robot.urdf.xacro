@@ -75,7 +75,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun_main_body.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun/kinikun_main_body.dae" />
       </geometry>
     </visual>
     <collision>
@@ -132,7 +132,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_R.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun/kinikun_foot_R.dae" />
       </geometry>
     </visual>
   </link>
@@ -199,7 +199,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_L.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun/kinikun_foot_L.dae" />
       </geometry>
     </visual>
   </link>
@@ -278,7 +278,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_R.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun/kinikun_foot_R.dae" />
       </geometry>
     </visual>
   </link>
@@ -357,7 +357,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun_foot_L.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun/kinikun_foot_L.dae" />
       </geometry>
     </visual>
   </link>
