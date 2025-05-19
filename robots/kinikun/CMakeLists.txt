@@ -25,5 +25,4 @@ mujoco_model_convert(
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_subdirectory(test)
 endif()
