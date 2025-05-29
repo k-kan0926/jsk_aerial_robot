@@ -123,7 +123,7 @@
   <link name="arm1_link">
     <inertial>
       <origin xyz="0.138 0 -0.00104" rpy="0 0 0" />
-      <mass value="0.220" />
+      <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
@@ -200,7 +200,7 @@
   <link name="arm2_link">
     <inertial>
       <origin xyz="0.138 0 -0.00104" rpy="0 0 0" />
-      <mass value="0.220" />
+      <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>

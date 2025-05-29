@@ -2,7 +2,7 @@ aerial_robot_control_name: aerial_robot_control/under_actuated_tilted_lqi_contro
 
 controller:
   xy:
-    p_gain: 5.0
+    p_gain: 4.5
     i_gain: 0.07
     d_gain: 3.0
     limit_sum: 3
