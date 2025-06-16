@@ -122,16 +122,16 @@
 
   <link name="arm1_link">
     <inertial>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 -0 -0.00372" rpy="0 0 0" />
       <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00772" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun2/arm.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
     </visual>
   </link>
@@ -139,8 +139,8 @@
   <joint name="rotor1" type="continuous">
     <parent link="arm1_link" />
     <child link="thrust1" />
-    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
-    <axis xyz="0 0 -1" />
+    <origin xyz="0.1765 0 -0.034" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
 
@@ -199,16 +199,16 @@
 
   <link name="arm2_link">
     <inertial>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun2/arm.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
     </visual>
   </link>
@@ -216,8 +216,8 @@
   <joint name="rotor2" type="continuous">
     <parent link="arm2_link" />
     <child link="thrust2" />
-    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
-    <axis xyz="0 0 1" />
+    <origin xyz="0.1765 0 -0.034" rpy="0 0 0" />
+    <axis xyz="0 0 -1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
 
@@ -276,16 +276,16 @@
 
   <link name="arm3_link">
     <inertial>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun2/arm.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
     </visual>
   </link>
@@ -293,8 +293,8 @@
   <joint name="rotor3" type="continuous">
     <parent link="arm3_link" />
     <child link="thrust3" />
-    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
-    <axis xyz="0 0 -1" />
+    <origin xyz="0.1765 0 -0.034" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
 
@@ -353,16 +353,16 @@
   
   <link name="arm4_link">
     <inertial>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <mass value="0.191" />
       <inertia
         ixx="0.001804" iyy="0.017972" izz="0.019248"
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.138 0 0.00104" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://kinikun/urdf/mesh/kinikun2/arm.dae" />
+        <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
     </visual>
   </link>
@@ -370,8 +370,8 @@
   <joint name="rotor4" type="continuous">
     <parent link="arm4_link" />
     <child link="thrust4" />
-    <origin xyz="0.179 0 0.0209" rpy="0 0 0" />
-    <axis xyz="0 0 1" />
+    <origin xyz="0.1765 0 -0.034" rpy="0 0 0" />
+    <axis xyz="0 0 -1" />
     <limit effort="100" lower="${min_force}" upper="${max_force}" velocity="0.5" />
   </joint>
   
