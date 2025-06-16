@@ -206,7 +206,7 @@
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00772" rpy="0 0 0" />
       <geometry>
         <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
@@ -283,7 +283,7 @@
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00772" rpy="0 0 0" />
       <geometry>
         <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
@@ -360,7 +360,7 @@
         ixy="0.000021" ixz="0.000372" iyz="0.000000"/>
     </inertial>
     <visual>
-      <origin xyz="0.12795 0 -0.00372" rpy="0 0 0" />
+      <origin xyz="0.12795 0 -0.00772" rpy="0 0 0" />
       <geometry>
         <mesh filename="package://kinikun/urdf/mesh/kinikun2/down_arm.dae" />
       </geometry>
