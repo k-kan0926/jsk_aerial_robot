@@ -105,7 +105,9 @@ osMailQId canMsgMailHandle;
 osThreadId multiEncoderHandle;
 MagEncoder encoder1_("encoder_angle1");
 MagEncoder encoder2_("encoder_angle2");
-std::array<MagEncoder, 2> encoders_ = {encoder1_, encoder2_};
+MagEncoder encoder3_("encoder_angle3");
+MagEncoder encoder4_("encoder_angle4");
+std::array<MagEncoder, 4> encoders_ = {encoder1_, encoder2_, encoder3_, encoder4_};
 
 ros::NodeHandle nh_;
 

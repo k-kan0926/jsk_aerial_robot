@@ -27,7 +27,7 @@ namespace I2C_MultiPlexer
   {
     uint8_t val[1];
 
-    val[0] = (1 << ch) & 0x07; // assign the channel
+    val[0] = (1 << ch) & 0x0F; // assign the channel
 
     HAL_StatusTypeDef i2c_status = HAL_I2C_Master_Transmit(hi2c_, hub_address_, val, 1, 100);
     return i2c_status;
