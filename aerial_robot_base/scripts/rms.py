@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import rospy
+import tf
+
 
 from std_msgs.msg import Empty
 from std_msgs.msg import Int8
@@ -17,7 +19,7 @@ h: stop the calculate the output the RMS results.
 
 def pose_cb(data):
         # 40 Hz
-        global start_flag, imu_msg
+        global start_flag, imu_msg, imu_angles
         if start_flag == True:
                 global pose_cnt
                 global pose_squared_errors_sum
@@ -27,17 +29,24 @@ def pose_cb(data):
                 pose_squared_errors_sum[1] = pose_squared_errors_sum[1] + data.y.err_p * data.y.err_p
                 pose_squared_errors_sum[2] = pose_squared_errors_sum[2] + data.z.err_p * data.z.err_p
 
-                pose_squared_errors_sum[3] = pose_squared_errors_sum[3] + imu_msg.angles[0] * imu_msg.angles[0]
-                pose_squared_errors_sum[4] = pose_squared_errors_sum[4] + imu_msg.angles[1] * imu_msg.angles[1]
+                pose_squared_errors_sum[3] = pose_squared_errors_sum[3] + imu_angles[0] * imu_angles[0]
+                pose_squared_errors_sum[4] = pose_squared_errors_sum[4] + imu_angles[1] * imu_angles[1]
                 pose_squared_errors_sum[5] = pose_squared_errors_sum[5] + data.yaw.err_p * data.yaw.err_p
 
-                rms = [math.sqrt(i / pose_cnt) for i in pose_squared_errors_sum]
+                # rms = [math.sqrt(i / pose_cnt) for i in pose_squared_errors_sum]
                 #rospy.loginfo("RMS errors of pos: [%f, %f, %f]; rot: [%f, %f, %f]", rms[0], rms[1], rms[2], rms[3], rms[4], rms[5])
 
 def imu_cb(data):
         # 200 Hz
-        global imu_msg
+        global imu_msg, imu_angles
         imu_msg = data
+
+        try:
+            q=data.quaternion
+            imu_angles = tf.transformations.euler_from_quaternion([q[0], q[1], q[2], q[3]])
+        except Exception as e:
+            rospy.logwarn("Quaternion conversion failed: %s", e)
+            imu_angles = None
         
                 
 def getKey():
@@ -55,6 +64,7 @@ if __name__=="__main__":
 
         pose_squared_errors_sum = [0] * 6
         imu_msg = None
+        imu_angles = None
         pose_cnt = 0
 
         rospy.Subscriber("debug/pose/pid", PoseControlPid, pose_cb)
