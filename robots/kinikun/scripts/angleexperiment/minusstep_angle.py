@@ -51,7 +51,7 @@ class StepParamLoader:
 
     def run(self):
         current_p1 = 0.0
-        current_p2 = 0.7
+        current_p2 = 0.7  # 初期値を0.45に設定
 
         while not rospy.is_shutdown() and current_p1 <= MAX_VALUE:
             self.publish_step(current_p1, current_p2)

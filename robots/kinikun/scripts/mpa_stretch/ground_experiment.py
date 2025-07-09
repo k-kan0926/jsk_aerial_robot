@@ -8,7 +8,7 @@ FREQUENCY = 10   # 更新頻度（Hz）
 PAUSE_TIME = 2.0 # 目標値到達後の停止時間（秒）
 
 # p1_value と p2_value の切り替え目標値
-TARGET_VALUES = [(0.1, 0.5), (0.5, 0.1)]  # 交互に切り替え
+TARGET_VALUES = [(0.1, 0.65), (0.65, 0.1)]  # 交互に切り替え
 
 def gradually_update(start, end, duration, frequency):
     """指定の開始と終了値の間を線形に補間してリストを返す"""

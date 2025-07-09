@@ -50,7 +50,7 @@ class StepParamLoader:
         rospy.loginfo(f"Command: p1={p1:.2f}, p2={p2:.2f}")
 
     def run(self):
-        current_p1 = 0.7    
+        current_p1 = 0.7  # 初期値を0.25に設定
         current_p2 = 0.0
 
         while not rospy.is_shutdown() and current_p2 <= MAX_VALUE:
