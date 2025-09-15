@@ -28,6 +28,25 @@ class ExpDiffGridMPA:
         self.pub_sum  = rospy.Publisher("~p_sum_MPa", Float32, queue_size=10)
         self.pub_diff = rospy.Publisher("~p_diff_MPa", Float32, queue_size=10)
 
+        # 追 加 パ ラ メ ー タ
+        self.slew_sum_list  = rospy.get_param("~slew_sum_list_MPa_s",  [0.06, 0.12])  # 和圧の速度水準
+        self.slew_diff_list = rospy.get_param("~slew_diff_list_MPa_s", [0.12, 0.25]) # 差圧の速度水準
+        self.dir_modes = rospy.get_param("~dir_modes", ["up","down"])  # 進入方向
+        self.settle_sec = rospy.get_param("~settle_sec", 1.0)          # セトル待ち
+        # 微小励起（PRBS）
+        self.probe_enable = rospy.get_param("~probe_enable", True)
+        self.probe_bits = rospy.get_param("~probe_bits", 20)
+        self.probe_bit_sec = rospy.get_param("~probe_bit_sec", 0.1)
+        self.probe_amp_sum  = rospy.get_param("~probe_amp_sum_MPa",  0.01)
+        self.probe_amp_diff = rospy.get_param("~probe_amp_diff_MPa", 0.01)
+
+        # (オプション) 派生量のpublish
+        self.pub_dsum  = rospy.Publisher("~dp_sum_MPa_s",  Float32, queue_size=10)
+        self.pub_ddsum = rospy.Publisher("~ddp_sum_MPa_s2", Float32, queue_size=10)
+        self.pub_ddiff = rospy.Publisher("~ddp_diff_MPa_s2", Float32, queue_size=10)
+        self.pub_ddiff = rospy.Publisher("~dp_diff_MPa_s",  Float32, queue_size=10)
+
+
         self.prev_p1 = 0.0
         self.prev_p2 = 0.0
 
@@ -41,28 +60,38 @@ class ExpDiffGridMPA:
         sums = np.linspace(self.p_sum_min, self.p_sum_max, self.grid_sum_pts)
         schedule = []
         for ps in sums:
-            # 差圧の許容最大値（p1,p2>=0 & <=pmax を満たす）
             pdiff_max = min(ps, 2.0*self.p_max - ps)
-            if pdiff_max < 1e-6:
-                diffs = [0.0]
-            else:
-                diffs = np.linspace(-pdiff_max, +pdiff_max, self.grid_diff_pts)
+            diffs = [0.0] if pdiff_max < 1e-6 else np.linspace(-pdiff_max, +pdiff_max, self.grid_diff_pts)
             for pd in diffs:
-                p1 = 0.5*(ps + pd)
-                p2 = 0.5*(ps - pd)
-                # 念のためクリップ
-                if 0.0 <= p1 <= self.p_max and 0.0 <= p2 <= self.p_max:
-                    schedule.append((float(ps), float(pd), float(p1), float(p2)))
+                for Ssum in self.slew_sum_list:
+                    for Sdiff in self.slew_diff_list:
+                        for dm in self.dir_modes:
+                            # 進入方向の起点を決める（up：低側から、down：高側から）
+                            # 和圧・差圧それぞれ、少し外側のプリスタート点を作ってからターゲットへ
+                            margin = 0.02  # [MPa]
+                            if dm == "up":
+                                ps_start = max(self.p_sum_min, min(ps, self.p_sum_max) - margin)
+                                pd_start = np.clip(pd, -min(ps_start, 2*self.p_max-ps_start), +min(ps_start, 2*self.p_max-ps_start))
+                            else:  # down
+                                ps_start = min(self.p_sum_max, max(ps, self.p_sum_min) + margin)
+                                pd_start = np.clip(pd, -min(ps_start, 2*self.p_max-ps_start), +min(ps_start, 2*self.p_max-ps_start))
+                            schedule.append({
+                                "ps": float(ps), "pd": float(pd),
+                                "ps_start": float(ps_start), "pd_start": float(pd_start),
+                                "Ssum": float(Ssum), "Sdiff": float(Sdiff),
+                                "dir": dm
+                            })
         if self.randomize_order:
             random.shuffle(schedule)
-        # 複数周回
         schedule = schedule * max(1, int(self.cycles))
-        rospy.loginfo("[exp_diff_grid_mpa] %d setpoints generated.", len(schedule))
+        rospy.loginfo("[exp_diff_grid_mpa] %d setpoints (with rate/dir) generated.", len(schedule))
         return schedule
 
     def _slew(self, prev, cmd, dt, slew):
         dv = slew * dt
         return float(np.clip(cmd, prev - dv, prev + dv))
+    
+    
 
     def run(self):
         rate = rospy.Rate(self.rate_hz)

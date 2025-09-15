@@ -62,12 +62,12 @@ class AngleModelPidMPA:
 
         # ROS I/O
         self.sub_target = rospy.Subscriber("/target_angle", Float32, self.cb_target, queue_size=10)
-        self.sub_js     = rospy.Subscriber("/kinikun/joint_states", JointState, self.cb_joint, queue_size=10)
-        self.pub_p12    = rospy.Publisher("/p1p2_cmd", Vector3, queue_size=10)
+        self.sub_js     = rospy.Subscriber("/kinikun1/joint_states", JointState, self.cb_joint, queue_size=10)
+        self.pub_mpa    = rospy.Publisher("/mpa_cmd", Vector3, queue_size=10)
         self.pub_ff     = rospy.Publisher("~dbg_p_ff_MPa", Float32, queue_size=10)
         self.pub_pid    = rospy.Publisher("~dbg_p_pid_MPa", Float32, queue_size=10)
 
-        # dynamic_reconfigure
+        # dynamic_reconfigurepub_p12
         self.srv = Server(AnglePIDConfig, self.reconf_cb)
 
         # 逆写像 LUT（θ→p）を構築（内部はbarで計算、入出力はMPa）
@@ -136,8 +136,8 @@ class AngleModelPidMPA:
         self.target_angle = th
 
     def cb_joint(self, msg):
-        if 'arm3_joint' in msg.name:
-            idx = msg.name.index('arm3_joint')
+        if 'arm1_joint' in msg.name:
+            idx = msg.name.index('arm1_joint')
             self.current_angle = float(msg.position[idx])
             self.have_angle = True
 
@@ -195,10 +195,10 @@ class AngleModelPidMPA:
 
         # 出力（MPa）
         v = Vector3()
-        v.x = p1_cmd
-        v.y = p2_cmd
+        v.x = p1_cmd * 4096 / 0.9  # MPA→4096/0.9変換
+        v.y = p2_cmd * 4096 / 0.9
         v.z = 0.0
-        self.pub_p12.publish(v)
+        self.pub_mpa.publish(v)
         self.pub_ff.publish(Float32(p_ff))
         self.pub_pid.publish(Float32(p_pid))
 
