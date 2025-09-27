@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ========= User-facing args ========= -->
+  <!-- ロボットIDで名前空間を作る（例: kinikun1） -->
+  <arg name="robot_id" default="1" />
+  <arg name="robot_ns" default="kinikun$(arg robot_id)" />
+
+  <!-- トピック（必要なら上書き） -->
+  <arg name="joint_topic"  default="/$(arg robot_ns)/joint_states" />
+  <arg name="joint_name"   default="arm1_joint" />
+  <arg name="target_topic" default="/target_angle" />
+  <arg name="pub_topic_p12" default="/$(arg robot_ns)/p1p2_cmd" />
+
+  <!-- 目標角度を[deg]で与えるか -->
+  <arg name="target_in_deg" default="true" />
+
+  <!--  NNモデルのパス（既定はユーザ例に合わせる。必要に応じて上書き可）  -->
+  <arg name="model_pt"   default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh.pt" />
+  <arg name="model_meta" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh_meta.npz" />
+
+  <!-- ========= neural_C の主要パラメータ ========= -->
+  <arg name="ctrl_rate_hz" default="100" />
+  <arg name="p1_init" default="0.2" />
+  <arg name="p2_init" default="0.2" />
+
+  <arg name="hold_on_start" default="true" />
+
+  <arg name="plan_dt" default="0.02" />
+  <arg name="plan_horizon" default="30" />
+  <arg name="block" default="3" />
+
+  <arg name="w_stage" default="1.5" />
+  <arg name="w_term"  default="8.0" />
+  <arg name="w_rate"  default="0.6" />
+  <arg name="w_sigma" default="0.05" />
+  <arg name="wz"      default="0.2" />
+
+  <arg name="rate_sigma_plan" default="0.08" />
+  <arg name="rate_delta_plan" default="0.08" />
+  <arg name="rate_sigma_ctrl" default="1.0" />
+  <arg name="rate_delta_ctrl" default="1.0" />
+
+  <arg name="use_pid"     default="true" />
+  <arg name="kp_delta"    default="0.02" />
+  <arg name="ki_delta"    default="0.02" />
+  <arg name="kd_delta"    default="0.01" />
+  <arg name="pid_max_abs" default="0.03" />
+  <arg name="pid_deadband_deg" default="4" />
+  <arg name="tau_theta" default="0.2" />
+
+  <!-- ========= Nodes ========= -->
+  <group ns="$(arg robot_ns)">
+
+    <!-- neural_C Hammerstein MPC ノード -->
+    <node pkg="kinikun"
+          type="neural_C_hammerstein_mpc.py"
+          name="neural_C_hammerstein_mpc"
+          output="screen"
+          respawn="true">
+
+      <!-- トピック/基本設定 -->
+      <param name="target_in_deg" value="$(arg target_in_deg)" />
+      <param name="joint_topic"   value="$(arg joint_topic)" />
+      <param name="joint_name"    value="$(arg joint_name)" />
+      <param name="target_topic"  value="$(arg target_topic)" />
+      <param name="pub_topic_p12" value="$(arg pub_topic_p12)" />
+
+      <!-- モデル -->
+      <param name="model_pt"      value="$(arg model_pt)" />
+      <param name="model_meta"    value="$(arg model_meta)" />
+
+      <!-- 実行周期/初期圧 -->
+      <param name="ctrl_rate_hz" value="$(arg ctrl_rate_hz)" />
+      <param name="p1_init" value="$(arg p1_init)" />
+      <param name="p2_init" value="$(arg p2_init)" />
+      <param name="hold_on_start" value="$(arg hold_on_start)" />
+
+      <!-- 計画関係 -->
+      <param name="plan_dt"       value="$(arg plan_dt)" />
+      <param name="plan_horizon"  value="$(arg plan_horizon)" />
+      <param name="block"         value="$(arg block)" />
+
+      <!-- 重み -->
+      <param name="w_stage" value="$(arg w_stage)" />
+      <param name="w_term"  value="$(arg w_term)" />
+      <param name="w_rate"  value="$(arg w_rate)" />
+      <param name="w_sigma" value="$(arg w_sigma)" />
+      <param name="wz"      value="$(arg wz)" />
+
+      <!-- レート制約（計画側/制御側） -->
+      <param name="rate_sigma_plan" value="$(arg rate_sigma_plan)" />
+      <param name="rate_delta_plan" value="$(arg rate_delta_plan)" />
+      <param name="rate_sigma_ctrl" value="$(arg rate_sigma_ctrl)" />
+      <param name="rate_delta_ctrl" value="$(arg rate_delta_ctrl)" />
+
+      <!-- PID 併用 -->
+      <param name="use_pid"     value="$(arg use_pid)" />
+      <param name="kp_delta"    value="$(arg kp_delta)" />
+      <param name="ki_delta"    value="$(arg ki_delta)" />
+      <param name="kd_delta"    value="$(arg kd_delta)" />
+      <param name="pid_max_abs" value="$(arg pid_max_abs)" />
+      <param name="pid_deadband_deg" value="$(arg pid_deadband_deg)" />
+      <param name="tau_theta" value="$(arg tau_theta)" />
+    </node>
+
+  </group>
+</launch>

@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- ========= User-facing args ========= -->
+  <!-- ロボットIDで名前空間を作る（例: kinikun1） -->
+  <arg name="robot_id" default="1" />
+  <arg name="robot_ns" default="kinikun$(arg robot_id)" />
+
+  <!-- 目標角度を[deg]で与えるか -->
+  <arg name="target_in_deg" default="true" />
+
+  <!-- 関節トピック/名前（既定は例の通り） -->
+  <arg name="joint_topic"  default="/kinikun1/joint_states" />
+  <arg name="joint_name"   default="arm1_joint" />
+  <arg name="target_topic" default="/target_angle" />
+  <arg name="pub_topic_p12" default="/p1p2_cmd" />
+
+  <!-- NNモデルのパス（自環境に合わせて変更可） -->
+  <arg name="model_pt"   default="$(find kinikun)/models/model_k4b_nh.pt" />
+  <arg name="model_meta" default="$(find kinikun)/models/model_k4b_nh_meta.npz" />
+
+  <!-- ========= MPC / 実行時パラメータ ========= -->
+  <arg name="H"           default="12" />
+  <arg name="w_stage"     default="1.5" />
+  <arg name="w_term"      default="8.0" />
+  <arg name="w_sigma"     default="0.02" />
+  <arg name="w_rate"      default="0.4" />
+  <arg name="w_block"     default="8.0" />
+  <arg name="block"       default="3" />
+  <arg name="rate_sigma"  default="0.12" />
+  <arg name="rate_delta"  default="0.12" />
+  <arg name="p_max_MPa"   default="1.25" />
+
+  <!-- ホールド（目標保持）関連 -->
+  <arg name="hold_enabled"      default="true" />
+  <arg name="hold_deadband_deg" default="0.8" />
+  <arg name="hold_rate_deg_s"   default="2.0" />
+  <arg name="hold_dwell_s"      default="0.25" />
+  <arg name="hold_exit_deg"     default="1.2" />
+
+  <!-- ========= Nodes ========= -->
+  <group ns="$(arg robot_ns)">
+
+    <!-- ニューラル Hammerstein MPC ノード -->
+    <node pkg="kinikun"
+          type="neural_B_hammerstein_mpc.py"
+          name="neural_B_hammerstein_mpc"
+          output="screen"
+          respawn="true">
+
+      <!-- 例で渡していた private params をそのまま設定 -->
+      <param name="target_in_deg" value="$(arg target_in_deg)" />
+      <param name="joint_topic"   value="$(arg joint_topic)" />
+      <param name="joint_name"    value="$(arg joint_name)" />
+      <param name="target_topic"  value="$(arg target_topic)" />
+      <param name="pub_topic_p12" value="$(arg pub_topic_p12)" />
+
+      <param name="model_pt"      value="$(arg model_pt)" />
+      <param name="model_meta"    value="$(arg model_meta)" />
+
+      <param name="H"         value="$(arg H)" />
+      <param name="w_stage"   value="$(arg w_stage)" />
+      <param name="w_term"    value="$(arg w_term)" />
+      <param name="w_sigma"   value="$(arg w_sigma)" />
+      <param name="w_rate"    value="$(arg w_rate)" />
+      <param name="w_block"   value="$(arg w_block)" />
+      <param name="block"     value="$(arg block)" />
+      <param name="rate_sigma" value="$(arg rate_sigma)" />
+      <param name="rate_delta" value="$(arg rate_delta)" />
+      <param name="p_max_MPa"  value="$(arg p_max_MPa)" />
+
+      <param name="hold_enabled"      value="$(arg hold_enabled)" />
+      <param name="hold_deadband_deg" value="$(arg hold_deadband_deg)" />
+      <param name="hold_rate_deg_s"   value="$(arg hold_rate_deg_s)" />
+      <param name="hold_dwell_s"      value="$(arg hold_dwell_s)" />
+      <param name="hold_exit_deg"     value="$(arg hold_exit_deg)" />
+    </node>
+
+  </group>
+</launch>
