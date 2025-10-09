@@ -79,7 +79,7 @@ class NarxSqpController(object):
         self.w_z             = float(rospy.get_param("~w_z", 1.0))
         self.w_u             = float(rospy.get_param("~w_u", 0.1))
         self.u_delta_clip    = float(rospy.get_param("~u_delta_clip_MPa", 0.10))
-        self.reg_scale       = float(rospy.get_param("~reg_scale", 0.9/4096.0))
+        self.reg_scale       = float(rospy.get_param("~reg_scale", 4096/0.9))  # 出力圧スケール（必要に応じて）
         self.verbose_every   = int(rospy.get_param("~verbose_every", 50))
         self.pub_topic       = rospy.get_param("~pub_cmd_p12", "/mpa_cmd")  # ← ここだけ publish
 
