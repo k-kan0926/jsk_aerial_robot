@@ -121,7 +121,7 @@ class NarxSqpController(object):
         # pub/sub
         self.pub_p   = rospy.Publisher(self.pub_topic, Vector3, queue_size=1)
         if self.theta_joint_name:
-            rospy.Subscriber("/joint_states", JointState, self._cb_jointstate, queue_size=10)
+            rospy.Subscriber("/kinikun1/joint_states", JointState, self._cb_jointstate, queue_size=10)
         else:
             rospy.Subscriber(self.topic_theta, Float32, self._cb_theta_float, queue_size=10)
         rospy.Subscriber(self.topic_target, Float32, self._cb_target, queue_size=10)

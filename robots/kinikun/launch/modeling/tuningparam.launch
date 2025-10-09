@@ -1,0 +1,14 @@
+<launch>
+  <arg name="robot_id" default="1"/>
+  <arg name="robot_ns" default="kinikun$(arg robot_id)"/>
+
+  <!-- いま使っている制御用 YAML をチューナNSにロード -->
+  <rosparam ns="kinikun_param_tuner"
+            file="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/neural/next_params.yaml" command="load"/>
+
+  <node pkg="kinikun" type="tuner_optimizer.py" name="kinikun_param_tuner" output="screen">
+    <param name="out_param_yaml" value="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/neural/next_params.yaml"/>
+    <param name="sigma_ref" value="0.55"/>
+    <param name="pmax" value="1.05"/>
+  </node>
+</launch>
