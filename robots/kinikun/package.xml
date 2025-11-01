@@ -1,28 +1,40 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>kinikun</name>
-  <version>1.3.3</version>
-  <description>The basic packages for mini quadrotor</description>
+  <version>1.0.0</version>
+  <description>The kinikun package</description>
 
-  <maintainer email="chou@jsk.imi.i.u-tokyo.ac.jp">Bakui Chou</maintainer>
+  <maintainer email="kan@dragon.t.u-tokyo.ac.jp">Keiichiro, Kan</maintainer>
   <license>BSD</license>
-  <url type="website">https://github.com/JSKAerialRobot/aerial_robot</url>
-  <author email="chou@jsk.imi.i.u-tokyo.ac.jp">Bakui Chou</author>
+  <url type="website">https://github.com/jsk-ros-pkg/jsk_aerial_robot</url>
+  <author email="kan@dragon.t.u-tokyo.ac.jp">Keiichiro, Kan</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>aerial_robot_control</build_depend>
+  <build_depend>aerial_robot_model</build_depend>
+  <build_depend>aerial_robot_estimation</build_depend>
+  <build_depend>aerial_robot_msgs</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>diagnostic_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
   <build_depend>mujoco_ros_control</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
 
-  <run_depend>aerial_robot_base</run_depend>
-  <run_depend>aerial_robot_control</run_depend>
-  <run_depend>aerial_robot_estimation</run_depend>
-  <run_depend>aerial_robot_model</run_depend>
-  <run_depend>aerial_robot_msgs</run_depend>
-  <run_depend>aerial_robot_simulation</run_depend>
-  <run_depend>mocap_optitrack</run_depend>
-  <run_depend>cfs_sensor</run_depend>
-  <test_depend>rostest</test_depend>
+  <exec_depend>aerial_robot_control</exec_depend>
+  <exec_depend>aerial_robot_model</exec_depend>
+  <exec_depend>aerial_robot_msgs</exec_depend>
+  <exec_depend>aerial_robot_estimation</exec_depend>
+  <exec_depend>aerial_robot_simulation</exec_depend>
+  <exec_depend>aerial_robot_base</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>pluginlib</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>cfs_sensor</exec_depend>
 
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+  </export>
 </package>
