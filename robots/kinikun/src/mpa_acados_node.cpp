@@ -33,8 +33,10 @@ public:
 
     // acados solver 作成
     solver_.reset(new mpa_acados_controller::NarxAcadosSolver());
-    if (!solver_->isOk()) {
-      ROS_ERROR("acados solver init failed");
+    if (!solver_->init(pmax_)) {
+      ROS_ERROR("acados solver init failed: narx_disc_acados_create() returned nonzero");
+    } else {
+      ROS_INFO("acados solver init OK (pmax=%.3f)", pmax_);
     }
 
     timer_ = nh_.createTimer(ros::Duration(1.0/ctrl_rate_hz_), &MpaAcadosNode::onTimer, this);

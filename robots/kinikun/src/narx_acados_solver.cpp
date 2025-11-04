@@ -45,8 +45,8 @@ void NarxAcadosSolver::setX0(const std::vector<double> &x0)
   ocp_nlp_config *nlp_config = narx_disc_acados_get_nlp_config(capsule_);
   ocp_nlp_dims   *nlp_dims   = narx_disc_acados_get_nlp_dims(capsule_);
   ocp_nlp_in     *nlp_in     = narx_disc_acados_get_nlp_in(capsule_);
+  ocp_nlp_out    *nlp_out    = narx_disc_acados_get_nlp_out(capsule_);
 
-  // ← ここを「関数」じゃなくて「マクロ」で取る
   const int nx = NARX_DISC_NX;
   const int N  = NARX_DISC_N;
 
@@ -55,13 +55,17 @@ void NarxAcadosSolver::setX0(const std::vector<double> &x0)
   if (copy_n > 0)
     std::memcpy(x_init.data(), x0.data(), sizeof(double) * copy_n);
 
-  // stage 0
-  ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, 0, "x", x_init.data());
+  // 1) 解ベクトルの初期推定：nlp_out に x を入れる（0..N 全ステージ）
+  for (int stage = 0; stage <= N; ++stage)
+    ocp_nlp_out_set(nlp_config, nlp_dims, nlp_out, nlp_in, stage, "x", (void*)x_init.data());
 
-  // 他ステージにも同じのを入れておくと初回が安定する
-  for (int stage = 1; stage <= N; ++stage)
-    ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, stage, "x", x_init.data());
+  // 2) x(0)=x0 の等式拘束：lbx/ubx を stage=0 に設定
+  //   生成コードに narx_disc_acados_update_x0 が無かったので、直接 constraints をセットします。
+  //   通常、生成済み OCP は nbx_0=nx, idxbx_0=[0..nx-1] に設定済みです。
+  ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, 0, "lbx", (void*)x_init.data());
+  ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, 0, "ubx", (void*)x_init.data());
 }
+
 
 void NarxAcadosSolver::setParams(double theta_ref, double dz0)
 {

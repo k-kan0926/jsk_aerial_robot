@@ -64,7 +64,7 @@
 #define NARX_DISC_NY0    4
 #define NARX_DISC_NY     4
 #define NARX_DISC_NYN    1
-#define NARX_DISC_N      12
+#define NARX_DISC_N      30
 #define NARX_DISC_NH     0
 #define NARX_DISC_NHN    0
 #define NARX_DISC_NH0    0

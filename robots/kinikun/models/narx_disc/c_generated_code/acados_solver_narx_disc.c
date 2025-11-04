@@ -341,44 +341,41 @@ void narx_disc_acados_create_setup_functions(narx_disc_solver_capsule* capsule)
 
 
     ext_fun_opts.external_workspace = true;
-    if (N > 0)
+    // nonlinear least squares function
+    MAP_CASADI_FNC(cost_y_0_fun, narx_disc_cost_y_0_fun);
+    MAP_CASADI_FNC(cost_y_0_fun_jac_ut_xt, narx_disc_cost_y_0_fun_jac_ut_xt);
+
+
+
+
+    // discrete dynamics
+    capsule->discr_dyn_phi_fun = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*N);
+    for (int i = 0; i < N; i++)
     {
-        // nonlinear least squares function
-        MAP_CASADI_FNC(cost_y_0_fun, narx_disc_cost_y_0_fun);
-        MAP_CASADI_FNC(cost_y_0_fun_jac_ut_xt, narx_disc_cost_y_0_fun_jac_ut_xt);
+        MAP_CASADI_FNC(discr_dyn_phi_fun[i], narx_disc_dyn_disc_phi_fun);
+    }
 
+    capsule->discr_dyn_phi_fun_jac_ut_xt = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*N);
+    for (int i = 0; i < N; i++)
+    {
+        MAP_CASADI_FNC(discr_dyn_phi_fun_jac_ut_xt[i], narx_disc_dyn_disc_phi_fun_jac);
+    }
 
+  
 
-    
-        // discrete dynamics
-        capsule->discr_dyn_phi_fun = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*N);
-        for (int i = 0; i < N; i++)
-        {
-            MAP_CASADI_FNC(discr_dyn_phi_fun[i], narx_disc_dyn_disc_phi_fun);
-        }
+  
+    // nonlinear least squares cost
+    capsule->cost_y_fun = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*(N-1));
+    for (int i = 0; i < N-1; i++)
+    {
+        MAP_CASADI_FNC(cost_y_fun[i], narx_disc_cost_y_fun);
+    }
 
-        capsule->discr_dyn_phi_fun_jac_ut_xt = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*N);
-        for (int i = 0; i < N; i++)
-        {
-            MAP_CASADI_FNC(discr_dyn_phi_fun_jac_ut_xt[i], narx_disc_dyn_disc_phi_fun_jac);
-        }
-
-    
-
-    
-        // nonlinear least squares cost
-        capsule->cost_y_fun = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*(N-1));
-        for (int i = 0; i < N-1; i++)
-        {
-            MAP_CASADI_FNC(cost_y_fun[i], narx_disc_cost_y_fun);
-        }
-
-        capsule->cost_y_fun_jac_ut_xt = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*(N-1));
-        for (int i = 0; i < N-1; i++)
-        {
-            MAP_CASADI_FNC(cost_y_fun_jac_ut_xt[i], narx_disc_cost_y_fun_jac_ut_xt);
-        }
-    } // N > 0
+    capsule->cost_y_fun_jac_ut_xt = (external_function_external_param_casadi *) malloc(sizeof(external_function_external_param_casadi)*(N-1));
+    for (int i = 0; i < N-1; i++)
+    {
+        MAP_CASADI_FNC(cost_y_fun_jac_ut_xt[i], narx_disc_cost_y_fun_jac_ut_xt);
+    }
     // nonlinear least square function
     MAP_CASADI_FNC(cost_y_e_fun, narx_disc_cost_y_e_fun);
     MAP_CASADI_FNC(cost_y_e_fun_jac_ut_xt, narx_disc_cost_y_e_fun_jac_ut_xt);
@@ -456,7 +453,25 @@ void narx_disc_acados_setup_nlp_in(narx_disc_solver_capsule* capsule, const int 
         cost_scaling[9] = 0.004997253417975855;
         cost_scaling[10] = 0.004997253417975855;
         cost_scaling[11] = 0.004997253417975855;
-        cost_scaling[12] = 1;
+        cost_scaling[12] = 0.004997253417975855;
+        cost_scaling[13] = 0.004997253417975855;
+        cost_scaling[14] = 0.004997253417975855;
+        cost_scaling[15] = 0.004997253417975855;
+        cost_scaling[16] = 0.004997253417975855;
+        cost_scaling[17] = 0.004997253417975855;
+        cost_scaling[18] = 0.004997253417975855;
+        cost_scaling[19] = 0.004997253417975855;
+        cost_scaling[20] = 0.004997253417975855;
+        cost_scaling[21] = 0.004997253417975855;
+        cost_scaling[22] = 0.004997253417975855;
+        cost_scaling[23] = 0.004997253417975855;
+        cost_scaling[24] = 0.004997253417975855;
+        cost_scaling[25] = 0.004997253417975855;
+        cost_scaling[26] = 0.004997253417975855;
+        cost_scaling[27] = 0.004997253417975855;
+        cost_scaling[28] = 0.004997253417975855;
+        cost_scaling[29] = 0.004997253417975855;
+        cost_scaling[30] = 1;
         for (int i = 0; i <= N; i++)
         {
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "scaling", &cost_scaling[i]);
@@ -618,126 +633,30 @@ void narx_disc_acados_setup_nlp_in(narx_disc_solver_capsule* capsule, const int 
     double* lbx0 = lubx0;
     double* ubx0 = lubx0 + NBX0;
     // change only the non-zero elements:
-    lbx0[0] = -0.4007928999553289;
-    ubx0[0] = -0.4007928999553289;
-    lbx0[1] = 0.28999999165534973;
-    ubx0[1] = 0.28999999165534973;
-    lbx0[2] = 0.2800000011920929;
-    ubx0[2] = 0.2800000011920929;
-    lbx0[3] = -1.246785916013028;
-    ubx0[3] = -1.246785916013028;
-    lbx0[4] = -2.493568116322012;
-    ubx0[4] = -2.493568116322012;
-    lbx0[5] = -0.002303481101989746;
-    ubx0[5] = -0.002303481101989746;
-    lbx0[6] = -0.4007928999553289;
-    ubx0[6] = -0.4007928999553289;
-    lbx0[7] = 0.3000000119209289;
-    ubx0[7] = 0.3000000119209289;
-    lbx0[8] = 0.3000000119209289;
-    ubx0[8] = 0.3000000119209289;
-    lbx0[9] = -0.4904270419848178;
-    ubx0[9] = -0.4904270419848178;
-    lbx0[10] = -0.9808526223861184;
-    ubx0[10] = -0.9808526223861184;
-    lbx0[11] = -0.002386868000030517;
-    ubx0[11] = -0.002386868000030517;
-    lbx0[12] = -0.4007928999553289;
-    ubx0[12] = -0.4007928999553289;
-    lbx0[13] = 0.3000000119209289;
-    ubx0[13] = 0.3000000119209289;
-    lbx0[14] = 0.3000000119209289;
-    ubx0[14] = 0.3000000119209289;
-    lbx0[17] = -0.002386868000030517;
-    ubx0[17] = -0.002386868000030517;
-    lbx0[18] = -0.4007928999553289;
-    ubx0[18] = -0.4007928999553289;
-    lbx0[19] = 0.3000000119209289;
-    ubx0[19] = 0.3000000119209289;
-    lbx0[20] = 0.3000000119209289;
-    ubx0[20] = 0.3000000119209289;
-    lbx0[21] = -0.000000000000003552713678800501;
-    ubx0[21] = -0.000000000000003552713678800501;
-    lbx0[22] = -0.000000000000003552713678800501;
-    ubx0[22] = -0.000000000000003552713678800501;
-    lbx0[23] = -0.0024728775024414063;
-    ubx0[23] = -0.0024728775024414063;
-    lbx0[24] = -0.4007928999553289;
-    ubx0[24] = -0.4007928999553289;
-    lbx0[25] = 0.3000000119209289;
-    ubx0[25] = 0.3000000119209289;
-    lbx0[26] = 0.3000000119209289;
-    ubx0[26] = 0.3000000119209289;
-    lbx0[29] = -0.0024728775024414063;
-    ubx0[29] = -0.0024728775024414063;
-    lbx0[30] = -0.4007928999553289;
-    ubx0[30] = -0.4007928999553289;
-    lbx0[31] = 0.3000000119209289;
-    ubx0[31] = 0.3000000119209289;
-    lbx0[32] = 0.3000000119209289;
-    ubx0[32] = 0.3000000119209289;
-    lbx0[33] = -0.000000000000003552713678800501;
-    ubx0[33] = -0.000000000000003552713678800501;
-    lbx0[34] = -0.000000000000003552713678800501;
-    ubx0[34] = -0.000000000000003552713678800501;
-    lbx0[35] = -0.002547025680541992;
-    ubx0[35] = -0.002547025680541992;
-    lbx0[36] = -0.3913114986103377;
-    ubx0[36] = -0.3913114986103377;
-    lbx0[37] = 0.3000000119209289;
-    ubx0[37] = 0.3000000119209289;
-    lbx0[38] = 0.3000000119209289;
-    ubx0[38] = 0.3000000119209289;
-    lbx0[39] = -0.000000000000003552713678800501;
-    ubx0[39] = -0.000000000000003552713678800501;
-    lbx0[40] = -0.000000000000003552713678800501;
-    ubx0[40] = -0.000000000000003552713678800501;
-    lbx0[41] = -0.002547025680541992;
-    ubx0[41] = -0.002547025680541992;
-    lbx0[42] = -0.3913114986103377;
-    ubx0[42] = -0.3913114986103377;
-    lbx0[43] = 0.3000000119209289;
-    ubx0[43] = 0.3000000119209289;
-    lbx0[44] = 0.3000000119209289;
-    ubx0[44] = 0.3000000119209289;
-    lbx0[45] = 0.000000000000003552713678800501;
-    ubx0[45] = 0.000000000000003552713678800501;
-    lbx0[46] = 0.000000000000003552713678800501;
-    ubx0[46] = 0.000000000000003552713678800501;
-    lbx0[47] = -0.0026613473892211914;
-    ubx0[47] = -0.0026613473892211914;
-    lbx0[48] = -0.3913114986103377;
-    ubx0[48] = -0.3913114986103377;
-    lbx0[49] = 0.3000000119209289;
-    ubx0[49] = 0.3000000119209289;
-    lbx0[50] = 0.3000000119209289;
-    ubx0[50] = 0.3000000119209289;
-    lbx0[53] = -0.0026613473892211914;
-    ubx0[53] = -0.0026613473892211914;
-    lbx0[54] = -0.3913114986103377;
-    ubx0[54] = -0.3913114986103377;
-    lbx0[55] = 0.3000000119209289;
-    ubx0[55] = 0.3000000119209289;
-    lbx0[56] = 0.3000000119209289;
-    ubx0[56] = 0.3000000119209289;
-    lbx0[59] = -0.0027205944061279297;
-    ubx0[59] = -0.0027205944061279297;
-    lbx0[60] = -0.37945974692909873;
-    ubx0[60] = -0.37945974692909873;
-    lbx0[61] = 0.3000000119209289;
-    ubx0[61] = 0.3000000119209289;
-    lbx0[62] = 0.3000000119209289;
-    ubx0[62] = 0.3000000119209289;
-    lbx0[65] = -0.0027205944061279297;
-    ubx0[65] = -0.0027205944061279297;
-    lbx0[66] = -0.37945974692909873;
-    ubx0[66] = -0.37945974692909873;
-    lbx0[67] = 0.3000000119209289;
-    ubx0[67] = 0.3000000119209289;
-    lbx0[68] = 0.3000000119209289;
-    ubx0[68] = 0.3000000119209289;
-    lbx0[71] = -0.0028274059295654297;
-    ubx0[71] = -0.0028274059295654297;
+    lbx0[1] = 0.3;
+    ubx0[1] = 0.3;
+    lbx0[7] = 0.3;
+    ubx0[7] = 0.3;
+    lbx0[13] = 0.3;
+    ubx0[13] = 0.3;
+    lbx0[19] = 0.3;
+    ubx0[19] = 0.3;
+    lbx0[25] = 0.3;
+    ubx0[25] = 0.3;
+    lbx0[31] = 0.3;
+    ubx0[31] = 0.3;
+    lbx0[37] = 0.3;
+    ubx0[37] = 0.3;
+    lbx0[43] = 0.3;
+    ubx0[43] = 0.3;
+    lbx0[49] = 0.3;
+    ubx0[49] = 0.3;
+    lbx0[55] = 0.3;
+    ubx0[55] = 0.3;
+    lbx0[61] = 0.3;
+    ubx0[61] = 0.3;
+    lbx0[67] = 0.3;
+    ubx0[67] = 0.3;
 
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, 0, "idxbx", idxbx0);
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, nlp_out, 0, "lbx", lbx0);
@@ -828,10 +747,6 @@ void narx_disc_acados_setup_nlp_in(narx_disc_solver_capsule* capsule, const int 
 
 
 
-
-
-
-
     /* constraints that are the same for initial and intermediate */
     // u
     int* idxbu = malloc(NBU * sizeof(int));
@@ -857,12 +772,6 @@ void narx_disc_acados_setup_nlp_in(narx_disc_solver_capsule* capsule, const int 
 
 
 
-    /* Path constraints */
-
-
-
-
-
 
 
 
@@ -873,13 +782,6 @@ void narx_disc_acados_setup_nlp_in(narx_disc_solver_capsule* capsule, const int 
 
 
     /* terminal constraints */
-
-
-
-
-
-
-
 
 
 
@@ -965,13 +867,12 @@ static void narx_disc_acados_create_set_opts(narx_disc_solver_capsule* capsule)
     int rti_log_only_available_residuals = 0;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "rti_log_only_available_residuals", &rti_log_only_available_residuals);
 
-    bool with_anderson_acceleration = false;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "with_anderson_acceleration", &with_anderson_acceleration);
-
     int qp_solver_iter_max = 50;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_iter_max", &qp_solver_iter_max);
 
 
+    int qp_solver_warm_start = 1;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_warm_start", &qp_solver_warm_start);
 
     int print_level = 0;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "print_level", &print_level);
@@ -1002,66 +903,18 @@ void narx_disc_acados_set_nlp_out(narx_disc_solver_capsule* capsule)
     double* x0 = xu0;
 
     // initialize with x0
-    x0[0] = -0.4007928999553289;
-    x0[1] = 0.28999999165534973;
-    x0[2] = 0.2800000011920929;
-    x0[3] = -1.246785916013028;
-    x0[4] = -2.493568116322012;
-    x0[5] = -0.002303481101989746;
-    x0[6] = -0.4007928999553289;
-    x0[7] = 0.3000000119209289;
-    x0[8] = 0.3000000119209289;
-    x0[9] = -0.4904270419848178;
-    x0[10] = -0.9808526223861184;
-    x0[11] = -0.002386868000030517;
-    x0[12] = -0.4007928999553289;
-    x0[13] = 0.3000000119209289;
-    x0[14] = 0.3000000119209289;
-    x0[17] = -0.002386868000030517;
-    x0[18] = -0.4007928999553289;
-    x0[19] = 0.3000000119209289;
-    x0[20] = 0.3000000119209289;
-    x0[21] = -0.000000000000003552713678800501;
-    x0[22] = -0.000000000000003552713678800501;
-    x0[23] = -0.0024728775024414063;
-    x0[24] = -0.4007928999553289;
-    x0[25] = 0.3000000119209289;
-    x0[26] = 0.3000000119209289;
-    x0[29] = -0.0024728775024414063;
-    x0[30] = -0.4007928999553289;
-    x0[31] = 0.3000000119209289;
-    x0[32] = 0.3000000119209289;
-    x0[33] = -0.000000000000003552713678800501;
-    x0[34] = -0.000000000000003552713678800501;
-    x0[35] = -0.002547025680541992;
-    x0[36] = -0.3913114986103377;
-    x0[37] = 0.3000000119209289;
-    x0[38] = 0.3000000119209289;
-    x0[39] = -0.000000000000003552713678800501;
-    x0[40] = -0.000000000000003552713678800501;
-    x0[41] = -0.002547025680541992;
-    x0[42] = -0.3913114986103377;
-    x0[43] = 0.3000000119209289;
-    x0[44] = 0.3000000119209289;
-    x0[45] = 0.000000000000003552713678800501;
-    x0[46] = 0.000000000000003552713678800501;
-    x0[47] = -0.0026613473892211914;
-    x0[48] = -0.3913114986103377;
-    x0[49] = 0.3000000119209289;
-    x0[50] = 0.3000000119209289;
-    x0[53] = -0.0026613473892211914;
-    x0[54] = -0.3913114986103377;
-    x0[55] = 0.3000000119209289;
-    x0[56] = 0.3000000119209289;
-    x0[59] = -0.0027205944061279297;
-    x0[60] = -0.37945974692909873;
-    x0[61] = 0.3000000119209289;
-    x0[62] = 0.3000000119209289;
-    x0[65] = -0.0027205944061279297;
-    x0[66] = -0.37945974692909873;
-    x0[67] = 0.3000000119209289;
-    x0[68] = 0.3000000119209289;
-    x0[71] = -0.0028274059295654297;
+    x0[1] = 0.3;
+    x0[7] = 0.3;
+    x0[13] = 0.3;
+    x0[19] = 0.3;
+    x0[25] = 0.3;
+    x0[31] = 0.3;
+    x0[37] = 0.3;
+    x0[43] = 0.3;
+    x0[49] = 0.3;
+    x0[55] = 0.3;
+    x0[61] = 0.3;
+    x0[67] = 0.3;
 
 
     double* u0 = xu0 + NX;
@@ -1324,13 +1177,7 @@ void narx_disc_acados_print_stats(narx_disc_solver_capsule* capsule)
     ocp_nlp_get(capsule->nlp_solver, "stat_m", &stat_m);
 
 
-    int stat_n_max = 16;
-    if (stat_n > stat_n_max)
-    {
-        printf("stat_n_max = %d is too small, increase it in the template!\n", stat_n_max);
-        exit(1);
-    }
-    double stat[1600];
+    double stat[1200];
     ocp_nlp_get(capsule->nlp_solver, "statistics", stat);
 
     int nrow = nlp_iter+1 < stat_m ? nlp_iter+1 : stat_m;
