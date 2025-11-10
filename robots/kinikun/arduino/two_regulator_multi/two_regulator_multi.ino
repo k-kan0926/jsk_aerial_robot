@@ -72,7 +72,7 @@ void flash() {
 
     //読み取り値出力
     Serial.print(p1);
-    Serial.print(",");
+    Serial.print(",,,");
     Serial.print(p2);
     Serial.println();
     

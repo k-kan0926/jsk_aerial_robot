@@ -19,7 +19,6 @@ Params (~names):
   w_term (8.0), w_path (5.0), w_rate (0.10), w_z (0.10), w_box (200.0)
   cmd_gain (4096/0.9), cmd_clip_max (4096.0)
 
-Author: you + ChatGPT
 """
 
 import json

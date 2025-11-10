@@ -2,36 +2,39 @@
   <!-- ========= 引数 ========= -->
   <arg name="meta"  default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx/narx_meta.json"/>
   <arg name="model" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx/narx_model.pt"/>
+  <arg name="log_csv" default="/home/keiichiro/Documents/narx_mppi_log3.csv"/>
+  <arg name="pressure_delay_s" default="0.06"/>
 
   <!-- I/O -->
   <arg name="theta_topic"     default="/kinikun1/joint_states"/>
   <arg name="theta_index"     default="2"/>
   <arg name="mpa_cmd_topic"   default="/mpa_cmd"/>
   <arg name="target_topic"    default="/theta_target_deg"/>
+  <arg name="pressure_topic"  default="/mpa_pressure"/>
 
   <!-- 制御基本設定 -->
   <arg name="pmax"            default="0.7"/>
   <arg name="rate"            default="100.0"/>
-  <arg name="horizon"         default="50"/>
-  <arg name="K"               default="256"/>
-  <arg name="lambda"          default="1.0"/>
-  <arg name="sigma_u"         default="0.006"/>
+  <arg name="horizon"         default="20"/>
+  <arg name="K"               default="128"/>
+  <arg name="lambda"          default="2.0"/>
+  <arg name="sigma_u"         default="0.12"/>
   <!-- 目標は購読で上書きされるが、起動時の初期値として -->
   <arg name="theta_target_deg" default="20.0"/>
 
   <!-- コスト重み -->
   <arg name="w_term" default="8.0"/>
-  <arg name="w_path" default="5.0"/>
-  <arg name="w_rate" default="0.10"/>
-  <arg name="w_z"    default="0.10"/>
-  <arg name="w_box"  default="200.0"/>
+  <arg name="w_path" default="20.0"/>
+  <arg name="w_rate" default="0.01"/>
+  <arg name="w_z"    default="0.05"/>
+  <arg name="w_box"  default="600.0"/>
 
   <!-- 出力変換（4096/0.9） -->
   <arg name="cmd_gain"     default="4551.11111111"/>  <!-- 4096/0.9 -->
   <arg name="cmd_clip_max" default="4096.0"/>
 
   <!-- ========= ノード ========= -->
-  <node pkg="kinikun" type="narx_mppi_control.py" name="narx_mppi_node" output="screen">
+  <node pkg="kinikun" type="narx_mppi_control3.py" name="narx_mppi_node" output="screen">
     <!-- 必須モデル -->
     <param name="meta"  value="$(arg meta)"/>
     <param name="model" value="$(arg model)"/>
@@ -41,6 +44,9 @@
     <param name="theta_index"   value="$(arg theta_index)"/>
     <param name="mpa_cmd_topic" value="$(arg mpa_cmd_topic)"/>
     <param name="target_topic"  value="$(arg target_topic)"/>
+    <param name="pressure_topic" value="$(arg pressure_topic)"/>
+    <param name="pressure_delay_s" value="$(arg pressure_delay_s)"/>
+    <param name="log_csv" value="$(arg log_csv)"/>
 
     <!-- 制御 -->
     <param name="pmax"   value="$(arg pmax)"/>
