@@ -284,7 +284,7 @@ def main():
     ap.add_argument("--w_z", type=float, default=1.0)
     ap.add_argument("--w_u", type=float, default=0.1)
     ap.add_argument("--u_delta_clip", type=float, default=0.10)
-    ap.add_argument("--reg_scale", type=float, default=(0.9/4096.0))
+    ap.add_argument("--reg_scale", type=float, default=(4096/0.9), help="圧力→コマンド変換のスケール（逆数をデフォルトに）")
     ap.add_argument("--csv", default="narx_sqp_sim.csv")
     ap.add_argument("--plot", action="store_true")
     ap.add_argument("--verbose_every", type=int, default=50)
