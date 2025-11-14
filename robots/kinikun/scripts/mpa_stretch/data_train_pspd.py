@@ -22,7 +22,7 @@ Modes:
   _mode:=static_grid / dyn_prbs / dyn_multisine / dyn_chirp / dyn_random
 
 static_grid1 (low pressure, fewer points):
-rosrun kinikun exp_mpa_protocol_node.py \
+rosrun kinikun data_train_pspd.py \
   _mode:=static_grid _rate_hz:=200 \
   _p_max_MPa:=0.70 _p_sum_min_MPa:=0.10 _p_sum_max_MPa:=0.80 \
   _grid_sum_pts:=8 _grid_diff_pts:=13 \
@@ -32,7 +32,7 @@ rosrun kinikun exp_mpa_protocol_node.py \
   _publish_scaled_cmd:=true _warmup_sec:=3.0
 
 static_grid2 (more points)
-rosrun kinikun exp_mpa_protocol_node.py \
+rosrun kinikun data_train_pspd.py \
   _mode:=static_grid _rate_hz:=200 \
   _p_max_MPa:=0.70 _p_sum_min_MPa:=0.10 _p_sum_max_MPa:=1.30 \
   _grid_sum_pts:=13 _grid_diff_pts:=13 \
@@ -42,7 +42,7 @@ rosrun kinikun exp_mpa_protocol_node.py \
   _publish_scaled_cmd:=true _warmup_sec:=2.0
 
 dyn_prbs:
-rosrun kinikun exp_mpa_protocol_node.py \
+rosrun kinikun data_train_pspd.py \
   _mode:=dyn_prbs _session_sec:=900 _rate_hz:=200 \
   _dyn_ps_bias:=0.55 _dyn_ps_span:=0.25 _dyn_pd_span:=0.60 \
   _prbs_pd_interval_min:=0.15 _prbs_pd_interval_max:=0.35 \
@@ -52,7 +52,7 @@ rosrun kinikun exp_mpa_protocol_node.py \
   _publish_scaled_cmd:=true _warmup_sec:=2.0
 
 dyn_multisine:
-rosrun kinikun exp_mpa_protocol_node.py \
+rosrun kinikun data_train_pspd.py \
   _mode:=dyn_multisine _session_sec:=420 _rate_hz:=200 \
   _dyn_ps_bias:=0.50 _dyn_ps_span:=0.30 _dyn_pd_span:=0.55 \
   _multisine_pd_freqs:="0.3,0.6,1.2,2.4" \
@@ -61,7 +61,7 @@ rosrun kinikun exp_mpa_protocol_node.py \
   _publish_scaled_cmd:=true
 
 dyn_chirp:
-rosrun kinikun exp_mpa_protocol_node.py \
+rosrun kinikun data_train_pspd.py \
   _mode:=dyn_chirp _session_sec:=360 _rate_hz:=200 \
   _dyn_ps_bias:=0.50 _dyn_ps_span:=0.25 _dyn_pd_span:=0.60 \
   _chirp_f_lo:=0.2 _chirp_f_hi:=5.0 _chirp_two_sided:=true \
