@@ -1,19 +1,25 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- NARX-MPPI Controller for Production2 Model -->
+  <!-- NARX-MPPI Controller with Hold Mode -->
   
   <!-- Model Configuration -->
   <arg name="model_dir" default="$(find kinikun)/models/out_narx2"/>
   
   <!-- Control Rate -->
-  <arg name="rate" default="100"/>  <!-- Hz -->
-  <arg name="frame_skip" default="2"/>  <!-- Effective 50Hz -->
+  <arg name="rate" default="100"/>
+  <arg name="frame_skip" default="2"/>
   
   <!-- MPPI Parameters -->
-  <arg name="K" default="8"/>  <!-- Population size -->
-  <arg name="horizon" default="8"/>  <!-- Prediction horizon -->
-  <arg name="lambda" default="2.0"/>  <!-- Temperature -->
-  <arg name="sigma_u" default="0.10"/>  <!-- Control noise std [MPa] -->
+  <arg name="K" default="32"/>
+  <arg name="horizon" default="15"/>
+  <arg name="lambda" default="2.0"/>
+  <arg name="sigma_u" default="0.10"/>
+  
+  <!-- Hold Mode Parameters -->
+  <arg name="hold_threshold_deg" default="2.0"/>      <!-- 目標到達判定: ±2° -->
+  <arg name="hold_duration_s" default="1.0"/>         <!-- 1秒継続で確定 -->
+  <arg name="sigma_u_decay" default="0.95"/>          <!-- 感度減衰率 -->
+  <arg name="sigma_u_min" default="0.02"/>            <!-- 最小感度 -->
   
   <!-- Cost Weights -->
   <arg name="w_tracking" default="30.0"/>
@@ -22,9 +28,9 @@
   <arg name="w_constraint" default="500.0"/>
   
   <!-- Physical Limits -->
-  <arg name="p_max" default="0.70"/>  <!-- Max pressure [MPa] -->
-  <arg name="dp_max" default="3.5"/>  <!-- Max pressure rate [MPa/s] -->
-  <arg name="pressure_delay_s" default="0.084"/>  <!-- Measured delay [s] -->
+  <arg name="p_max" default="0.70"/>
+  <arg name="dp_max" default="3.5"/>
+  <arg name="pressure_delay_s" default="0.084"/>
   
   <!-- Topics -->
   <arg name="theta_topic" default="/kinikun1/joint_states"/>
@@ -34,13 +40,11 @@
   <arg name="cmd_topic" default="/mpa_cmd"/>
   
   <!-- Logging -->
-  <arg name="log_csv" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_log.csv"/>
-  
-  <!-- Optional: publish target for testing -->
-  <arg name="publish_target" default="false"/>
+  <arg name="log_csv" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_hold_log.csv"/>
   
   <!-- Node -->
-  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5.py"
+  <node name="narx_mppi_controller_hold" pkg="kinikun" 
+        type="narx_mppi_controller_with_hold.py"
         output="screen" respawn="false">
     
     <!-- Model -->
@@ -55,6 +59,12 @@
     <param name="horizon" value="$(arg horizon)"/>
     <param name="lambda" value="$(arg lambda)"/>
     <param name="sigma_u" value="$(arg sigma_u)"/>
+    
+    <!-- Hold Mode -->
+    <param name="hold_threshold_deg" value="$(arg hold_threshold_deg)"/>
+    <param name="hold_duration_s" value="$(arg hold_duration_s)"/>
+    <param name="sigma_u_decay" value="$(arg sigma_u_decay)"/>
+    <param name="sigma_u_min" value="$(arg sigma_u_min)"/>
     
     <!-- Costs -->
     <param name="w_tracking" value="$(arg w_tracking)"/>
@@ -77,10 +87,5 @@
     <!-- Logging -->
     <param name="log_csv" value="$(arg log_csv)"/>
   </node>
-  
-  <!-- Target Publisher (for testing) -->
-  <node name="target_publisher" pkg="rostopic" type="rostopic" 
-        args="pub -r 1 $(arg target_topic) std_msgs/Float32 'data: 0.0'"
-        if="$(arg publish_target)"/>
   
 </launch>

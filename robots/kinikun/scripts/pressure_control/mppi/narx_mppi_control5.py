@@ -6,7 +6,7 @@ Production2モデル用の実時間MPPI制御ノード
 
 Features:
 - GPU並列推論による高速化
-- 遅延補償
+- 遅延補償（pressure_delay_s は今後拡張用）
 - カルマンフィルタによるノイズ除去
 - 安全監視機構
 - 非同期ロギング
@@ -16,12 +16,12 @@ Usage:
 """
 import os, json, time, math, threading
 from collections import deque
-from typing import Optional, Tuple, List
-import asyncio
+from typing import Tuple
+import asyncio  # 使っていないが今はそのまま
 
 import numpy as np
 import rospy
-from std_msgs.msg import Float32, String, Bool
+from std_msgs.msg import Float32, String
 from geometry_msgs.msg import Vector3
 from sensor_msgs.msg import JointState
 
@@ -51,13 +51,15 @@ class SimpleKalmanFilter:
         self.x = x0
         self.P = 1.0
 
+
 class SafetyMonitor:
+    """簡易安全監視（stuck チェックはオプション）"""
     def __init__(self, theta_rate_max=0.3, theta_abs_max=1.5,
                  enable_stuck_check=False, stuck_count_max=2000):
         self.last_theta = 0.0
         self.last_time = time.time()
-        self.theta_rate_max = theta_rate_max
-        self.theta_abs_max = theta_abs_max
+        self.theta_rate_max = theta_rate_max  # rad/s
+        self.theta_abs_max = theta_abs_max    # rad
         self.stuck_count = 0
         self.enable_stuck_check = enable_stuck_check
         self.stuck_count_max = stuck_count_max
@@ -66,8 +68,17 @@ class SafetyMonitor:
         now = time.time()
         dt = now - self.last_time
 
-        # 範囲チェック・レートチェックは今のままでOK
+        # 範囲チェック
+        if abs(theta) > self.theta_abs_max:
+            return False, f"Theta out of range: {theta:.3f} rad"
 
+        # レートチェック
+        if dt > 1e-6:
+            rate = abs(theta - self.last_theta) / dt
+            if rate > self.theta_rate_max:
+                return False, f"Theta rate too high: {rate:.2f} rad/s"
+
+        # センサ stuck チェック（オプション）
         if self.enable_stuck_check:
             if abs(theta - self.last_theta) < 1e-6:
                 self.stuck_count += 1
@@ -79,6 +90,7 @@ class SafetyMonitor:
         self.last_theta = theta
         self.last_time = now
         return True, "OK"
+
 
 # ==================== NARX Model ====================
 
@@ -100,6 +112,7 @@ class MLP_NARX(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+
 # ==================== MPPI Controller ====================
 
 class NARX_MPPI_Controller:
@@ -112,12 +125,14 @@ class NARX_MPPI_Controller:
         self.model_dir = rospy.get_param("~model_dir", "models/narx_p1p2_production2")
         self.rate_hz = float(rospy.get_param("~rate", 100.0))
         self.frame_skip = int(rospy.get_param("~frame_skip", 2))
+        # 制御ループ側で使う dt（1ステップの物理時間）
+        self.dt = float(self.frame_skip) / self.rate_hz
         
         # MPPI
-        self.K = int(rospy.get_param("~K", 32))          # Population（GPU用に削減）
-        self.H = int(rospy.get_param("~horizon", 15))   # Horizon（短縮）
+        self.K = int(rospy.get_param("~K", 32))          # Population（GPU前提で小さめ）
+        self.H = int(rospy.get_param("~horizon", 15))    # Prediction horizon
         self.temperature = float(rospy.get_param("~lambda", 2.0))
-        self.sigma_u = float(rospy.get_param("~sigma_u", 0.10))
+        self.sigma_u = float(rospy.get_param("~sigma_u", 0.10))  # [MPa] ノイズ標準偏差
         
         # Costs
         self.w_tracking = float(rospy.get_param("~w_tracking", 30.0))
@@ -141,6 +156,7 @@ class NARX_MPPI_Controller:
         self.log_path = rospy.get_param("~log_csv", "")
         self.log_buffer = deque(maxlen=10000)
         self.log_thread = None
+        self.log_file = None  # 後で close で落ちないように初期化
         
         # ========== Load Model ==========
         rospy.loginfo("[MPPI] Loading model...")
@@ -149,10 +165,11 @@ class NARX_MPPI_Controller:
         # ========== State Variables ==========
         self.lock = threading.Lock()
         
-        # Filtered states
+        # Filtered state
         self.theta_rad = 0.0
         self.theta_filter = SimpleKalmanFilter(process_noise=1e-5, measurement_noise=5e-4)
         
+        # Command / measured pressures
         self.p1_cmd = 0.0
         self.p2_cmd = 0.0
         self.p1_meas = 0.0
@@ -161,7 +178,7 @@ class NARX_MPPI_Controller:
         # Target
         self.theta_ref_rad = 0.0
         
-        # History buffers (for NARX features)
+        # History buffers (for NARX features, 実機側)
         maxlen = self.lags + 10
         self.hist_theta = deque([0.0] * maxlen, maxlen=maxlen)
         self.hist_p1_cmd = deque([0.0] * maxlen, maxlen=maxlen)
@@ -169,14 +186,14 @@ class NARX_MPPI_Controller:
         self.hist_dp1_dt = deque([0.0] * maxlen, maxlen=maxlen)
         self.hist_dp2_dt = deque([0.0] * maxlen, maxlen=maxlen)
         
-        # Pressure delay buffer
+        # Pressure delay buffer（将来拡張用）
         self.press_buf = deque(maxlen=200)  # (time, p1, p2)
         
         # Safety
         self.safety = SafetyMonitor(
-            theta_rate_max=0.5,
+            theta_rate_max=5.0,
             theta_abs_max=1.5,
-            enable_stuck_check=False,   # ★ しばらく無効化
+            enable_stuck_check=False,   # ★ しばらく無効
             stuck_count_max=2000
         )
         self.emergency_stop = False
@@ -188,11 +205,11 @@ class NARX_MPPI_Controller:
         self.pub_cmd = rospy.Publisher(self.cmd_topic, Vector3, queue_size=1)
         self.pub_status = rospy.Publisher("/mppi/status", String, queue_size=1, latch=True)
         
-        self.sub_theta = rospy.Subscriber(self.theta_topic, JointState, 
+        self.sub_theta = rospy.Subscriber(self.theta_topic, JointState,
                                           self.cb_theta, queue_size=10)
-        self.sub_target = rospy.Subscriber(self.target_topic, Float32, 
+        self.sub_target = rospy.Subscriber(self.target_topic, Float32,
                                            self.cb_target, queue_size=1)
-        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Vector3, 
+        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Vector3,
                                              self.cb_pressure, queue_size=50)
         
         # Logging
@@ -201,13 +218,14 @@ class NARX_MPPI_Controller:
         
         rospy.loginfo("[MPPI] Initialization complete")
         rospy.loginfo(f"  Model: {self.model_dir}")
-        rospy.loginfo(f"  Rate: {self.rate_hz} Hz (frame_skip={self.frame_skip})")
+        rospy.loginfo(f"  Rate: {self.rate_hz} Hz (frame_skip={self.frame_skip}, dt={self.dt:.4f}s)")
         rospy.loginfo(f"  MPPI: K={self.K}, H={self.H}")
         rospy.loginfo(f"  Device: {self.device}")
     
     # ========== Model Loading ==========
     
     def load_model(self):
+        """モデルとメタデータをロード"""
         meta_path = os.path.join(self.model_dir, 'narx_meta.json')
         model_path = os.path.join(self.model_dir, 'narx_model.pt')
 
@@ -220,8 +238,6 @@ class NARX_MPPI_Controller:
         self.mu = np.array(self.meta['mu'], dtype=np.float32)
         self.std = np.array(self.meta['std'], dtype=np.float32)
         self.hidden = self.meta['hidden']
-
-        # ★ 追加: 学習時に使った dropout を読む（なければ 0.0）
         self.dropout = self.meta.get('dropout', 0.0)
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -230,7 +246,6 @@ class NARX_MPPI_Controller:
 
         in_dim = self.lags * len(self.feat_cols)
 
-        # ★ ここで dropout を渡す
         self.model = MLP_NARX(
             in_dim,
             hidden=[self.hidden, self.hidden],
@@ -242,9 +257,10 @@ class NARX_MPPI_Controller:
         self.model.to(self.device)
         self.model.eval()
 
-        rospy.loginfo(f"[MPPI] Model loaded: lags={self.lags}, delay={self.delay}, "
-                    f"hidden={self.hidden}, dropout={self.dropout}")
-
+        rospy.loginfo(
+            f"[MPPI] Model loaded: lags={self.lags}, delay={self.delay}, "
+            f"hidden={self.hidden}, dropout={self.dropout}"
+        )
     
     # ========== ROS Callbacks ==========
     
@@ -252,14 +268,12 @@ class NARX_MPPI_Controller:
         """関節角度のコールバック（カルマンフィルタ適用）"""
         if self.theta_index < len(msg.position):
             theta_raw = float(msg.position[self.theta_index])
-            
             with self.lock:
-                # カルマンフィルタ
                 self.theta_rad = self.theta_filter.update(theta_raw)
                 self.hist_theta.appendleft(self.theta_rad)
     
     def cb_target(self, msg: Float32):
-        """目標角度のコールバック"""
+        """目標角度のコールバック（deg → rad）"""
         self.theta_ref_rad = math.radians(float(msg.data))
     
     def cb_pressure(self, msg: Vector3):
@@ -267,47 +281,19 @@ class NARX_MPPI_Controller:
         t = rospy.get_time()
         p1 = float(msg.x)
         p2 = float(msg.y)
-        
         with self.lock:
             self.press_buf.append((t, p1, p2))
             self.p1_meas = p1
             self.p2_meas = p2
     
-    # ========== Feature Construction ==========
+    # ========== Feature Construction (実機用の1点) ==========
     
-    def get_delayed_pressure(self) -> Tuple[float, float, bool]:
-        """遅延補償された圧力を取得"""
-        t_now = rospy.get_time()
-        t_target = t_now - self.pressure_delay_s
-        
-        with self.lock:
-            if len(self.press_buf) < 2:
-                return self.p1_meas, self.p2_meas, False
-            
-            # 線形補間
-            for i in range(len(self.press_buf) - 1):
-                t1, p1_1, p2_1 = self.press_buf[i]
-                t2, p1_2, p2_2 = self.press_buf[i + 1]
-                
-                if t1 <= t_target <= t2:
-                    alpha = (t_target - t1) / max(1e-9, t2 - t1)
-                    p1 = p1_1 + alpha * (p1_2 - p1_1)
-                    p2 = p2_1 + alpha * (p2_2 - p2_1)
-                    return p1, p2, True
-            
-            # 見つからない場合は最新値
-            return self.press_buf[-1][1], self.press_buf[-1][2], False
-    
-    def build_feature_vector(self, p1_cmd, p2_cmd, override_theta=None) -> np.ndarray:
+    def build_feature_vector_current(self) -> np.ndarray:
         """
-        NARX用特徴ベクトル構築
-        
-        Args:
-            p1_cmd, p2_cmd: 現在の指令圧力
-            override_theta: Rollout時のθ上書き値
-        
-        Returns:
-            x: (1, in_dim) 正規化済み特徴量
+        現在の実機状態から NARX 用特徴ベクトルを構築する（1サンプル分）
+
+        実際の制御ループでは roll-out 中に独自の履歴を持つので、
+        これは「実機状態での一発予測確認」用。
         """
         with self.lock:
             theta_hist = list(self.hist_theta)[:self.lags]
@@ -315,54 +301,50 @@ class NARX_MPPI_Controller:
             p2_hist = list(self.hist_p2_cmd)[:self.lags]
             dp1_hist = list(self.hist_dp1_dt)[:self.lags]
             dp2_hist = list(self.hist_dp2_dt)[:self.lags]
-        
-        # Override theta if provided (for rollout)
-        if override_theta is not None:
-            theta_hist[0] = override_theta
-        
-        # Ensure sufficient history
-        while len(theta_hist) < self.lags:
-            theta_hist.append(theta_hist[-1] if theta_hist else 0.0)
-            p1_hist.append(p1_hist[-1] if p1_hist else 0.0)
-            p2_hist.append(p2_hist[-1] if p2_hist else 0.0)
-            dp1_hist.append(0.0)
-            dp2_hist.append(0.0)
-        
-        # Construct feature vector
-        x = []
+
+        # 履歴長さの保証
+        def pad_hist(hist, fill=0.0):
+            if len(hist) == 0:
+                return [fill] * self.lags
+            if len(hist) < self.lags:
+                last = hist[-1]
+                hist = hist + [last] * (self.lags - len(hist))
+            return hist
+
+        theta_hist = pad_hist(theta_hist, self.theta_rad)
+        p1_hist = pad_hist(p1_hist, self.p1_cmd)
+        p2_hist = pad_hist(p2_hist, self.p2_cmd)
+        dp1_hist = pad_hist(dp1_hist, 0.0)
+        dp2_hist = pad_hist(dp2_hist, 0.0)
+
+        x_list = []
         for k in range(self.lags):
-            x.extend([
+            x_list.extend([
                 theta_hist[k],
                 p1_hist[k],
                 p2_hist[k],
                 dp1_hist[k],
-                dp2_hist[k]
+                dp2_hist[k],
             ])
-        
-        x = np.array(x, dtype=np.float32).reshape(1, -1)
-        
-        # Normalize
+        x = np.array(x_list, dtype=np.float32).reshape(1, -1)
         x_norm = (x - self.mu) / (self.std + 1e-8)
-        
         return x_norm
     
     # ========== MPPI Core ==========
     
     def enforce_constraints(self, p1, p2, p1_prev, p2_prev, dt):
-        """物理制約を厳密に適用"""
+        """物理制約を適用（レート + ボックス）"""
         # Rate limit
         dp_max_step = self.dp_max * dt
         p1 = np.clip(p1, p1_prev - dp_max_step, p1_prev + dp_max_step)
         p2 = np.clip(p2, p2_prev - dp_max_step, p2_prev + dp_max_step)
-        
         # Box constraint
         p1 = np.clip(p1, 0.0, self.p_max)
         p2 = np.clip(p2, 0.0, self.p_max)
-        
         return p1, p2
     
-    def cost_function(self, theta, theta_ref, p1, p2, p1_prev, p2_prev, 
-                     dp1, dp2, k, H):
+    def cost_function(self, theta, theta_ref, p1, p2, p1_prev, p2_prev,
+                      dp1, dp2, k, H):
         """コスト関数"""
         # Tracking error
         err = theta_ref - theta
@@ -390,74 +372,135 @@ class NARX_MPPI_Controller:
             viol += (p2 - self.p_max) ** 2
         
         cost += self.w_constraint * viol
-        
         return cost
     
     def rollout_batch(self, theta0, p1_0, p2_0, U):
         """
-        バッチ推論によるrollout
-        
+        バッチ推論による roll-out（K 本の候補軌道）
+
         Args:
-            theta0: 初期角度
-            p1_0, p2_0: 初期圧力
+            theta0: 現在角度（実機）
+            p1_0, p2_0: 現在の指令圧力（実機）
             U: (K, H, 2) control perturbations [dp1, dp2]
-        
+
         Returns:
             theta_seq: (K, H) predicted theta
             p1_seq, p2_seq: (K, H) pressure sequences
         """
         K, H = U.shape[0], U.shape[1]
-        dt = float(self.frame_skip) / self.rate_hz
-        
+        dt = self.dt
+
         theta_seq = np.zeros((K, H), dtype=np.float32)
         p1_seq = np.zeros((K, H), dtype=np.float32)
         p2_seq = np.zeros((K, H), dtype=np.float32)
-        
-        # Initial states
+
+        # 初期状態（各候補で共通）
         theta_k = np.full(K, theta0, dtype=np.float32)
         p1_k = np.full(K, p1_0, dtype=np.float32)
         p2_k = np.full(K, p2_0, dtype=np.float32)
-        
+
+        # 実機の履歴をベースに、各候補用の履歴を複製
+        with self.lock:
+            theta_hist0 = list(self.hist_theta)[:self.lags]
+            p1_hist0 = list(self.hist_p1_cmd)[:self.lags]
+            p2_hist0 = list(self.hist_p2_cmd)[:self.lags]
+            dp1_hist0 = list(self.hist_dp1_dt)[:self.lags]
+            dp2_hist0 = list(self.hist_dp2_dt)[:self.lags]
+
+        def pad_hist(hist, fill):
+            if len(hist) == 0:
+                return [fill] * self.lags
+            if len(hist) < self.lags:
+                last = hist[-1]
+                hist = hist + [last] * (self.lags - len(hist))
+            return hist
+
+        theta_hist0 = pad_hist(theta_hist0, theta0)
+        p1_hist0 = pad_hist(p1_hist0, p1_0)
+        p2_hist0 = pad_hist(p2_hist0, p2_0)
+        dp1_hist0 = pad_hist(dp1_hist0, 0.0)
+        dp2_hist0 = pad_hist(dp2_hist0, 0.0)
+
+        # shape: (K, lags)
+        theta_hist = np.tile(np.array(theta_hist0, dtype=np.float32), (K, 1))
+        p1_hist = np.tile(np.array(p1_hist0, dtype=np.float32), (K, 1))
+        p2_hist = np.tile(np.array(p2_hist0, dtype=np.float32), (K, 1))
+        dp1_hist = np.tile(np.array(dp1_hist0, dtype=np.float32), (K, 1))
+        dp2_hist = np.tile(np.array(dp2_hist0, dtype=np.float32), (K, 1))
+
+        n_feat_per_lag = len(self.feat_cols)
+        in_dim = self.lags * n_feat_per_lag
+
         for h in range(H):
-            # Apply control
-            p1_k = p1_k + U[:, h, 0]
-            p2_k = p2_k + U[:, h, 1]
-            
-            # Enforce constraints (vectorized)
+            # === 1) control を適用 ===
+            dp1 = U[:, h, 0]
+            dp2 = U[:, h, 1]
+
+            # 前回値を控えてから更新（レート制約用）
             p1_prev = p1_k.copy()
             p2_prev = p2_k.copy()
-            
+
+            p1_k = p1_k + dp1
+            p2_k = p2_k + dp2
+
+            # 制約適用（1本ずつで十分：K は小さい）
             for i in range(K):
                 p1_k[i], p2_k[i] = self.enforce_constraints(
                     p1_k[i], p2_k[i], p1_prev[i], p2_prev[i], dt
                 )
-            
-            # Batch feature construction
-            X_batch = []
-            for i in range(K):
-                x = self.build_feature_vector(p1_k[i], p2_k[i], override_theta=theta_k[i])
-                X_batch.append(torch.from_numpy(x))
-            
-            X_batch = torch.cat(X_batch, dim=0).to(self.device)  # (K, in_dim)
-            
-            # Batch inference
+
+            # dp/dt を計算
+            dp1_dt = (p1_k - p1_prev) / dt
+            dp2_dt = (p2_k - p2_prev) / dt
+
+            # === 2) 履歴を更新（最新値を先頭に push） ===
+            theta_hist = np.concatenate(
+                [theta_k[:, None], theta_hist[:, :-1]], axis=1
+            )
+            p1_hist = np.concatenate(
+                [p1_k[:, None], p1_hist[:, :-1]], axis=1
+            )
+            p2_hist = np.concatenate(
+                [p2_k[:, None], p2_hist[:, :-1]], axis=1
+            )
+            dp1_hist = np.concatenate(
+                [dp1_dt[:, None], dp1_hist[:, :-1]], axis=1
+            )
+            dp2_hist = np.concatenate(
+                [dp2_dt[:, None], dp2_hist[:, :-1]], axis=1
+            )
+
+            # === 3) NARX用特徴量を構築 ===
+            # feat_cols = [theta, p1_cmd, p2_cmd, dp1_cmd_dt, dp2_cmd_dt]
+            X_chunks = []
+            for k in range(self.lags):
+                X_chunks.append(theta_hist[:, k][:, None])
+                X_chunks.append(p1_hist[:, k][:, None])
+                X_chunks.append(p2_hist[:, k][:, None])
+                X_chunks.append(dp1_hist[:, k][:, None])
+                X_chunks.append(dp2_hist[:, k][:, None])
+            X_batch = np.concatenate(X_chunks, axis=1).astype(np.float32)  # (K, in_dim)
+
+            # 正規化
+            X_norm = (X_batch - self.mu) / (self.std + 1e-8)
+
+            # === 4) バッチ推論 ===
             with torch.no_grad():
-                Y_batch = self.model(X_batch)  # (K, 1)
-            
+                Y_batch = self.model(torch.from_numpy(X_norm).to(self.device))
             theta_k = Y_batch.cpu().numpy().flatten()
-            
-            # Store
+
+            # === 5) ログ用に保存 ===
             theta_seq[:, h] = theta_k
             p1_seq[:, h] = p1_k
             p2_seq[:, h] = p2_k
-        
+
         return theta_seq, p1_seq, p2_seq
     
     def mppi_step(self):
         """MPPI制御ステップ"""
         t_start = time.time()
         
-        # Get current state
+        # 現在状態を取得
         with self.lock:
             theta = self.theta_rad
             theta_ref = self.theta_ref_rad
@@ -472,33 +515,33 @@ class NARX_MPPI_Controller:
             self.publish_cmd(0.0, 0.0)
             return
         
-        # Sample control perturbations
-        U = np.random.normal(0, self.sigma_u, size=(self.K, self.H, 2)).astype(np.float32)
+        # 制御ノイズサンプル U: (K, H, 2)
+        U = np.random.normal(
+            loc=0.0,
+            scale=self.sigma_u,
+            size=(self.K, self.H, 2)
+        ).astype(np.float32)
         
         # Rollout
         theta_seq, p1_seq, p2_seq = self.rollout_batch(theta, p1_prev, p2_prev, U)
         
-        # Compute costs
-        dt = float(self.frame_skip) / self.rate_hz
+        # コスト計算
+        dt = self.dt
         J = np.zeros(self.K, dtype=np.float32)
         
         for i in range(self.K):
             cost = 0.0
             p1_h, p2_h = p1_prev, p2_prev
-            
             for h in range(self.H):
                 dp1 = U[i, h, 0]
                 dp2 = U[i, h, 1]
-                
                 cost += self.cost_function(
                     theta_seq[i, h], theta_ref,
                     p1_seq[i, h], p2_seq[i, h],
                     p1_h, p2_h, dp1, dp2, h, self.H
                 )
-                
                 p1_h = p1_seq[i, h]
                 p2_h = p2_seq[i, h]
-            
             J[i] = cost
         
         # MPPI weight computation
@@ -506,7 +549,7 @@ class NARX_MPPI_Controller:
         w = np.exp(-(J - beta) / max(1e-6, self.temperature))
         w_sum = np.sum(w) + 1e-9
         
-        # Weighted average of controls
+        # 重み付き平均で最初の入力方向を決定
         dU = np.sum(w[:, None, None] * U, axis=0) / w_sum  # (H, 2)
         
         # Apply first control
@@ -519,30 +562,30 @@ class NARX_MPPI_Controller:
         
         # Publish
         self.publish_cmd(p1_cmd, p2_cmd)
-# Update history
+        
+        # Update history（実機側の履歴）
         with self.lock:
             self.p1_cmd = p1_cmd
             self.p2_cmd = p2_cmd
             self.hist_p1_cmd.appendleft(p1_cmd)
             self.hist_p2_cmd.appendleft(p2_cmd)
-            
-            # Compute derivatives (simple backward difference)
             if len(self.hist_p1_cmd) > 1:
                 dp1_dt = (self.hist_p1_cmd[0] - self.hist_p1_cmd[1]) / dt
                 dp2_dt = (self.hist_p2_cmd[0] - self.hist_p2_cmd[1]) / dt
             else:
                 dp1_dt, dp2_dt = 0.0, 0.0
-            
             self.hist_dp1_dt.appendleft(dp1_dt)
             self.hist_dp2_dt.appendleft(dp2_dt)
         
         # Performance monitoring
         comp_time = time.time() - t_start
         self.comp_time_buf.append(comp_time)
+        # 制御周期の 80% を超えたら一応 warn（今は黙らせてもOK）
+        # if comp_time > dt * 0.8:
+        #     rospy.logwarn(
+        #         f"[MPPI] Computation time high: {comp_time*1000:.1f}ms (limit: {dt*1000:.1f}ms)"
+        #     )
         
-        if comp_time > dt * 0.8:
-            # rospy.logwarn(f"[MPPI] Computation time high: {comp_time*1000:.1f}ms (limit: {dt*1000:.1f}ms)")
-            pass
         # Logging
         if self.log_path:
             err = theta_ref - theta
@@ -557,16 +600,17 @@ class NARX_MPPI_Controller:
                 'p2_meas': self.p2_meas,
                 'J_min': float(np.min(J)),
                 'J_mean': float(np.mean(J)),
-                'comp_time_ms': comp_time * 1000
+                'comp_time_ms': comp_time * 1000.0
             })
     
     # ========== Command Publishing ==========
     
     def publish_cmd(self, p1, p2):
-        """圧力指令を出力（MPa単位）"""
+        """圧力指令を出力（ハード側スケーリング込み）"""
         msg = Vector3()
-        msg.x = float(p1)*4096/0.9
-        msg.y = float(p2)*4096/0.9
+        # MPa → DAC値への変換（4096 / 0.9）
+        msg.x = float(p1) * 4096.0 / 0.9
+        msg.y = float(p2) * 4096.0 / 0.9
         msg.z = 0.0
         self.pub_cmd.publish(msg)
     
@@ -594,21 +638,17 @@ class NARX_MPPI_Controller:
     
     def logging_worker(self):
         """バックグラウンドでログ書き込み"""
-        rate = rospy.Rate(10)  # 10Hz書き込み
-        
+        rate = rospy.Rate(10)  # 10Hz 書き込み
         while not rospy.is_shutdown():
             if len(self.log_buffer) > 0:
-                # Batch write
                 batch = []
                 while len(self.log_buffer) > 0 and len(batch) < 100:
                     batch.append(self.log_buffer.popleft())
-                
                 try:
                     self.log_writer.writerows(batch)
                     self.log_file.flush()
                 except Exception as e:
                     rospy.logerr(f"[MPPI] Logging error: {e}")
-            
             rate.sleep()
     
     # ========== Main Loop ==========
@@ -649,11 +689,14 @@ class NARX_MPPI_Controller:
                 frame_count += 1
                 
                 # Performance report (every 10s)
-                if frame_count % (self.rate_hz * 10) == 0:
+                if frame_count % int(self.rate_hz * 10) == 0:
                     if len(self.comp_time_buf) > 0:
                         avg_time = np.mean(self.comp_time_buf)
                         max_time = np.max(self.comp_time_buf)
-                        rospy.loginfo(f"[MPPI] Comp time: avg={avg_time*1000:.1f}ms, max={max_time*1000:.1f}ms")
+                        rospy.loginfo(
+                            f"[MPPI] Comp time: avg={avg_time*1000:.1f}ms, "
+                            f"max={max_time*1000:.1f}ms"
+                        )
                 
                 rate.sleep()
         
@@ -661,13 +704,12 @@ class NARX_MPPI_Controller:
             pass
         
         finally:
-            # Shutdown procedure
             rospy.loginfo("[MPPI] Shutting down...")
             self.publish_cmd(0.0, 0.0)
             self.pub_status.publish(String("stopped"))
-            
             if self.log_file:
                 self.log_file.close()
+
 
 # ==================== Main ====================
 
