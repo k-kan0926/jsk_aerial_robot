@@ -11,8 +11,6 @@ Features:
 - 安全監視機構
 - 非同期ロギング
 
-Usage:
-  roslaunch kinikun narx_mppi_prod.launch
 """
 import os, json, time, math, threading
 from collections import deque
@@ -39,9 +37,7 @@ class SimpleKalmanFilter:
         self.x = 0.0
     
     def update(self, z):
-        # 予測
         P_pred = self.P + self.Q
-        # 更新
         K = P_pred / (P_pred + self.R)
         self.x = self.x + K * (z - self.x)
         self.P = (1 - K) * P_pred
@@ -68,17 +64,14 @@ class SafetyMonitor:
         now = time.time()
         dt = now - self.last_time
 
-        # 範囲チェック
         if abs(theta) > self.theta_abs_max:
             return False, f"Theta out of range: {theta:.3f} rad"
 
-        # レートチェック
         if dt > 1e-6:
             rate = abs(theta - self.last_theta) / dt
             if rate > self.theta_rate_max:
                 return False, f"Theta rate too high: {rate:.2f} rad/s"
 
-        # センサ stuck チェック（オプション）
         if self.enable_stuck_check:
             if abs(theta - self.last_theta) < 1e-6:
                 self.stuck_count += 1
@@ -95,7 +88,6 @@ class SafetyMonitor:
 # ==================== NARX Model ====================
 
 class MLP_NARX(nn.Module):
-    """Production2と互換性のあるNARXモデル"""
     def __init__(self, in_dim, hidden=[256, 256], out_dim=1, dropout=0.0):
         super().__init__()
         layers = []
@@ -122,10 +114,9 @@ class NARX_MPPI_Controller:
         rospy.init_node('narx_mppi_controller', anonymous=False)
         
         # ========== Parameters ==========
-        self.model_dir = rospy.get_param("~model_dir", "models/narx_p1p2_production2")
+        self.model_dir = rospy.get_param("~model_dir", "models/out_narx2")
         self.rate_hz = float(rospy.get_param("~rate", 100.0))
         self.frame_skip = int(rospy.get_param("~frame_skip", 2))
-        # 制御ループ側で使う dt（1ステップの物理時間）
         self.dt = float(self.frame_skip) / self.rate_hz
         
         # MPPI
@@ -193,7 +184,7 @@ class NARX_MPPI_Controller:
         self.safety = SafetyMonitor(
             theta_rate_max=5.0,
             theta_abs_max=1.5,
-            enable_stuck_check=False,   # ★ しばらく無効
+            enable_stuck_check=False,
             stuck_count_max=2000
         )
         self.emergency_stop = False
@@ -225,7 +216,6 @@ class NARX_MPPI_Controller:
     # ========== Model Loading ==========
     
     def load_model(self):
-        """モデルとメタデータをロード"""
         meta_path = os.path.join(self.model_dir, 'narx_meta.json')
         model_path = os.path.join(self.model_dir, 'narx_model.pt')
 
@@ -289,12 +279,6 @@ class NARX_MPPI_Controller:
     # ========== Feature Construction (実機用の1点) ==========
     
     def build_feature_vector_current(self) -> np.ndarray:
-        """
-        現在の実機状態から NARX 用特徴ベクトルを構築する（1サンプル分）
-
-        実際の制御ループでは roll-out 中に独自の履歴を持つので、
-        これは「実機状態での一発予測確認」用。
-        """
         with self.lock:
             theta_hist = list(self.hist_theta)[:self.lags]
             p1_hist = list(self.hist_p1_cmd)[:self.lags]
@@ -375,18 +359,6 @@ class NARX_MPPI_Controller:
         return cost
     
     def rollout_batch(self, theta0, p1_0, p2_0, U):
-        """
-        バッチ推論による roll-out（K 本の候補軌道）
-
-        Args:
-            theta0: 現在角度（実機）
-            p1_0, p2_0: 現在の指令圧力（実機）
-            U: (K, H, 2) control perturbations [dp1, dp2]
-
-        Returns:
-            theta_seq: (K, H) predicted theta
-            p1_seq, p2_seq: (K, H) pressure sequences
-        """
         K, H = U.shape[0], U.shape[1]
         dt = self.dt
 
@@ -617,7 +589,6 @@ class NARX_MPPI_Controller:
     # ========== Logging ==========
     
     def setup_logging(self):
-        """非同期ロギングのセットアップ"""
         import csv
         
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
@@ -637,7 +608,6 @@ class NARX_MPPI_Controller:
         rospy.loginfo(f"[MPPI] Logging to: {self.log_path}")
     
     def logging_worker(self):
-        """バックグラウンドでログ書き込み"""
         rate = rospy.Rate(10)  # 10Hz 書き込み
         while not rospy.is_shutdown():
             if len(self.log_buffer) > 0:
