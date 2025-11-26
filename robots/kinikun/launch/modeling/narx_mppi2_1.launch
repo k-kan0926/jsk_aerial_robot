@@ -1,0 +1,103 @@
+<launch>
+  <!-- 基本パラメータ -->
+  <arg name="model_dir" default="$(find kinikun)/models/out_narx2"/>
+  <arg name="rate" default="100.0"/>
+  <arg name="frame_skip" default="2"/>
+  
+  <!-- MPPI コアパラメータ（拡張版） -->
+  <arg name="K" default="256"/>  <!-- 32から256に増加 -->
+  <arg name="horizon" default="30"/>  <!-- 15から30に増加 -->
+  <arg name="lambda" default="1.0"/>
+  <arg name="sigma_u" default="0.15"/>  <!-- 0.10から0.15に増加 -->
+  
+  <!-- ===== 新機能パラメータ ===== -->
+  
+  <!-- B-spline軌道平滑化 -->
+  <arg name="use_bspline" default="false"/>
+  <arg name="bspline_control_points" default="8"/>
+  <arg name="bspline_degree" default="3"/>
+  
+  <!-- 適応的Sigma調整 -->
+  <arg name="use_adaptive_sigma" default="false"/>
+  <arg name="sigma_u_min" default="0.05"/>
+  <arg name="sigma_u_max" default="0.30"/>
+  <arg name="sigma_adaptation_rate" default="0.1"/>
+  
+  <!-- 軌道予測 -->
+  <arg name="use_trajectory_prediction" default="false"/>
+  <arg name="prediction_method" default="linear"/>  <!-- linear, spline -->
+  
+  <!-- コスト重み -->
+  <arg name="w_tracking" default="50.0"/>
+  <arg name="w_smooth" default="0.05"/>
+  <arg name="w_effort" default="0.01"/>
+  <arg name="w_constraint" default="500.0"/>
+  <arg name="w_terminal" default="100.0"/>
+  
+  <!-- 物理制約 -->
+  <arg name="p_max" default="0.70"/>
+  <arg name="dp_max" default="3.5"/>
+  
+  <!-- トピック名 -->
+  <arg name="theta_topic" default="/kinikun1/joint_states"/>
+  <arg name="theta_index" default="2"/>
+  <arg name="target_topic" default="/theta_target_deg"/>
+  <arg name="trajectory_topic" default="/theta_trajectory"/>
+  <arg name="cmd_topic" default="/mpa_cmd"/>
+  <arg name="pressure_topic" default="/mpa_pressure"/>
+  
+  <!-- ログ設定 -->
+  <arg name="log_csv" default=""/>
+  <arg name="debug" default="false"/>
+  
+  <!-- ノード起動 -->
+  <node name="mppi_controller" pkg="kinikun" 
+        type="narx_mppi_control5_1_spline.py" output="screen">
+    
+    <!-- すべてのパラメータを設定 -->
+    <param name="model_dir" value="$(arg model_dir)"/>
+    <param name="rate" value="$(arg rate)"/>
+    <param name="frame_skip" value="$(arg frame_skip)"/>
+    
+    <param name="K" value="$(arg K)"/>
+    <param name="horizon" value="$(arg horizon)"/>
+    <param name="lambda" value="$(arg lambda)"/>
+    <param name="sigma_u" value="$(arg sigma_u)"/>
+    
+    <!-- 新機能 -->
+    <param name="use_bspline" value="$(arg use_bspline)"/>
+    <param name="bspline_control_points" value="$(arg bspline_control_points)"/>
+    <param name="bspline_degree" value="$(arg bspline_degree)"/>
+    
+    <param name="use_adaptive_sigma" value="$(arg use_adaptive_sigma)"/>
+    <param name="sigma_u_min" value="$(arg sigma_u_min)"/>
+    <param name="sigma_u_max" value="$(arg sigma_u_max)"/>
+    <param name="sigma_adaptation_rate" value="$(arg sigma_adaptation_rate)"/>
+    
+    <param name="use_trajectory_prediction" value="$(arg use_trajectory_prediction)"/>
+    <param name="prediction_method" value="$(arg prediction_method)"/>
+    
+    <!-- 重み -->
+    <param name="w_tracking" value="$(arg w_tracking)"/>
+    <param name="w_smooth" value="$(arg w_smooth)"/>
+    <param name="w_effort" value="$(arg w_effort)"/>
+    <param name="w_constraint" value="$(arg w_constraint)"/>
+    <param name="w_terminal" value="$(arg w_terminal)"/>
+    
+    <!-- 制約 -->
+    <param name="p_max" value="$(arg p_max)"/>
+    <param name="dp_max" value="$(arg dp_max)"/>
+    
+    <!-- トピック -->
+    <param name="theta_topic" value="$(arg theta_topic)"/>
+    <param name="theta_index" value="$(arg theta_index)"/>
+    <param name="target_topic" value="$(arg target_topic)"/>
+    <param name="trajectory_topic" value="$(arg trajectory_topic)"/>
+    <param name="cmd_topic" value="$(arg cmd_topic)"/>
+    <param name="pressure_topic" value="$(arg pressure_topic)"/>
+    
+    <!-- ログ -->
+    <param name="log_csv" value="$(arg log_csv)"/>
+    <param name="debug" value="$(arg debug)"/>
+  </node>
+</launch>

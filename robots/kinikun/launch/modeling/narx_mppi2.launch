@@ -40,7 +40,7 @@
   <arg name="publish_target" default="false"/>
   
   <!-- Node -->
-  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5.py"
+  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5_0.py"
         output="screen" respawn="false">
     
     <!-- Model -->
