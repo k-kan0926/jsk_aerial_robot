@@ -11,14 +11,14 @@
   
   <!-- MPPI Parameters -->
   <arg name="K" default="8"/>  <!-- Population size -->
-  <arg name="horizon" default="8"/>  <!-- Prediction horizon -->
-  <arg name="lambda" default="2.0"/>  <!-- Temperature -->
-  <arg name="sigma_u" default="0.10"/>  <!-- Control noise std [MPa] -->
+  <arg name="horizon" default="10"/>  <!-- Prediction horizon -->
+  <arg name="lambda" default="3.0"/>  <!-- Temperature -->
+  <arg name="sigma_u" default="0.04"/>  <!-- Control noise std [MPa] -->
   
   <!-- Cost Weights -->
-  <arg name="w_tracking" default="30.0"/>
-  <arg name="w_smooth" default="0.05"/>
-  <arg name="w_effort" default="0.01"/>
+  <arg name="w_tracking" default="32.0"/>
+  <arg name="w_smooth" default="0.25"/>
+  <arg name="w_effort" default="0.02"/>
   <arg name="w_constraint" default="500.0"/>
   
   <!-- Physical Limits -->
