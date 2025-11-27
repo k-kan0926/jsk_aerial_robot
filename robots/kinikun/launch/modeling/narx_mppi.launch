@@ -1,8 +1,8 @@
 <launch>
   <!-- ========= 引数 ========= -->
-  <arg name="meta"  default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx1/narx_meta.json"/>
-  <arg name="model" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx1/narx_model.pt"/>
-  <arg name="log_csv" default="/home/keiichiro/Documents/narx_mppi_log3.csv"/>
+  <arg name="meta"  default="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx1/narx_meta.json"/>
+  <arg name="model" default="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/out_narx1/narx_model.pt"/>
+  <arg name="log_csv" default="/home/kan/Documents/narx_mppi_log3.csv"/>
   <arg name="pressure_delay_s" default="0.06"/>
 
   <!-- I/O -->

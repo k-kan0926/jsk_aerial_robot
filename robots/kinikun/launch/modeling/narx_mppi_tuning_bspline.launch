@@ -47,7 +47,7 @@
 
   <!-- Logging -->
   <arg name="log_csv"
-       default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_tuning_log.csv"/>
+       default="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_tuning_log.csv"/>
 
   <node name="narx_mppi_tuning"
         pkg="kinikun"

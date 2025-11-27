@@ -123,7 +123,7 @@ class NarxSqpController(object):
         if not SCIPY_OK:    raise RuntimeError("SciPy が必要です（SLSQP 最適化）。")
 
         # ---- params (ROS param server) ----
-        self.meta_npz_path   = rospy.get_param("~meta_npz_path", "/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/narx/narx_common_meta.npz")
+        self.meta_npz_path   = rospy.get_param("~meta_npz_path", "/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/narx/narx_common_meta.npz")
         self.ctrl_rate_hz    = float(rospy.get_param("~ctrl_rate_hz", 100.0))
         self.theta_in_deg    = bool(rospy.get_param("~theta_in_deg", True))
         self.theta_joint_name= rospy.get_param("~theta_joint_name", "")

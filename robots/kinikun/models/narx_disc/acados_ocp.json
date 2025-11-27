@@ -1,7 +1,7 @@
 {
-    "acados_include_path": "/home/keiichiro/acados/include",
-    "acados_lib_path": "/home/keiichiro/acados/lib",
-    "code_export_directory": "/home/keiichiro/acados/examples/acados_python/MPA/theta_z_clamp/c_generated_code",
+    "acados_include_path": "/home/kan/acados/include",
+    "acados_lib_path": "/home/kan/acados/lib",
+    "code_export_directory": "/home/kan/acados/examples/acados_python/MPA/theta_z_clamp/c_generated_code",
     "constraints": {
         "C": [],
         "C_e": [],
@@ -480,7 +480,7 @@
         "zu_e": []
     },
     "cython_include_dirs": [
-        "/home/keiichiro/.local/lib/python3.8/site-packages/numpy/core/include",
+        "/home/kan/.local/lib/python3.8/site-packages/numpy/core/include",
         "/usr/include/python3.8"
     ],
     "dims": {

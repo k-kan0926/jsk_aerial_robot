@@ -136,7 +136,7 @@ class SafeBayesianOptimizer:
         rospy.sleep(0.5)
         
         # 最新ログファイルを取得
-        log_files = glob.glob("/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/logs/pid_log_*.csv")
+        log_files = glob.glob("/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/logs/pid_log_*.csv")
         if not log_files:
             rospy.logwarn("No log file found!")
             return None

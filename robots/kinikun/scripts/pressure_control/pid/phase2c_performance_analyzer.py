@@ -144,7 +144,7 @@ def analyze_step_response(csv_path, settle_threshold=2.0, plot=True):
             plt.grid(True)
             
             plt.tight_layout()
-            plt.savefig(f'/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/step_{i}.png')
+            plt.savefig(f'/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/step_{i}.png')
             plt.close()
     
     return pd.DataFrame(results)

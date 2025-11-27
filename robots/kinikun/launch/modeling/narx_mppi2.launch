@@ -10,13 +10,13 @@
   <arg name="frame_skip" default="2"/>  <!-- Effective 50Hz -->
   
   <!-- MPPI Parameters -->
-  <arg name="K" default="8"/>  <!-- Population size -->
-  <arg name="horizon" default="10"/>  <!-- Prediction horizon -->
+  <arg name="K" default="32"/>  <!-- Population size -->
+  <arg name="horizon" default="14"/>  <!-- Prediction horizon -->
   <arg name="lambda" default="3.0"/>  <!-- Temperature -->
   <arg name="sigma_u" default="0.04"/>  <!-- Control noise std [MPa] -->
   
   <!-- Cost Weights -->
-  <arg name="w_tracking" default="32.0"/>
+  <arg name="w_tracking" default="35.0"/>
   <arg name="w_smooth" default="0.25"/>
   <arg name="w_effort" default="0.02"/>
   <arg name="w_constraint" default="500.0"/>
@@ -34,7 +34,7 @@
   <arg name="cmd_topic" default="/mpa_cmd"/>
   
   <!-- Logging -->
-  <arg name="log_csv" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_log.csv"/>
+  <arg name="log_csv" default="$(find kinikun)/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_log.csv"/>
   
   <!-- Optional: publish target for testing -->
   <arg name="publish_target" default="false"/>

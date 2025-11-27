@@ -17,11 +17,11 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 
-# acados が /home/keiichiro/acados にある前提
+# acados が /home/kan/acados にある前提
 # 環境変数 ACADOS_SOURCE_DIR があればそっちを優先
 set(ACADOS_ROOT $ENV{ACADOS_SOURCE_DIR})
 if(NOT ACADOS_ROOT)
-  set(ACADOS_ROOT /home/keiichiro/acados)
+  set(ACADOS_ROOT /home/kan/acados)
 endif()
 
 # 生成コードがある場所（あなたのツリーに合わせる）

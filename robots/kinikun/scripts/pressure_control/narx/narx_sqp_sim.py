@@ -8,7 +8,7 @@ NARX+z 1-step SLSQP コントローラのスタンドアロン・シミュレー
 
 使い方例:
   python narx_sqp_sim.py \
-    --meta /home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/narx/narx_common_meta.npz \
+    --meta /home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/narx/narx_common_meta.npz \
     --steps 400 --theta0_deg 0 --target_deg 30 --step_t 0.5 \
     --p_ind_max 0.70 --reg_scale 0.9/4096 \
     --w_theta 10.0 --w_z 1.0 --w_u 0.1 \

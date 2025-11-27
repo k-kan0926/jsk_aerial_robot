@@ -116,7 +116,7 @@ def main():
     while True:
         print("\033[1mEnter the module name: \033[0m")
         module_name = input().strip()
-        model_path = f'/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/{module_name}.sdf'  # SDFファイルのパスを指定
+        model_path = f'/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/{module_name}.sdf'  # SDFファイルのパスを指定
         if not os.path.exists(model_path):
             print(f"\033[1;91m[Warning] '{module_name}' model not found. Please enter a valid module name.\033[0m")
         else:

@@ -14,8 +14,8 @@
   <arg name="target_in_deg" default="true" />
 
   <!-- NNモデル -->
-  <arg name="model_pt"   default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh.pt" />
-  <arg name="model_meta" default="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh_meta.npz" />
+  <arg name="model_pt"   default="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh.pt" />
+  <arg name="model_meta" default="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/models/model_k4b_nh_meta.npz" />
 
   <!-- コントローラ固定系（引数で保持してOK） -->
   <arg name="ctrl_rate_hz" default="200" />
@@ -37,7 +37,7 @@
 
   <!-- ★ YAML をノードのプライベートNSにロード（ここがポイント） -->
   <rosparam ns="$(arg robot_ns)/neural_D_hammerstein_mpc"
-            file="/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/neural/next_params.yaml" command="load"/>
+            file="/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/neural/next_params.yaml" command="load"/>
 
   <!-- ========= Node ========= -->
   <group ns="$(arg robot_ns)">

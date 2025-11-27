@@ -146,7 +146,7 @@ class PIDController:
         # ログディレクトリを確認・作成
         log_dir = "/tmp"
         try:
-            log_dir = "/home/keiichiro/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/logs"
+            log_dir = "/home/kan/ros/jsk_aerial_robot_ws/src/jsk_aerial_robot/robots/kinikun/scripts/pressure_control/pid/logs"
             os.makedirs(log_dir, exist_ok=True)
         except:
             log_dir = "/tmp"
