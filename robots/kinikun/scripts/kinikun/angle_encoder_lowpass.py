@@ -17,11 +17,14 @@ class AS5600JointStatePublisher:
 
         # Subscriber
         self.subs = [
-            rospy.Subscriber('/kinikun1/encoder_angle1', UInt16, self.callback_factory(0)),
-            rospy.Subscriber('/kinikun1/encoder_angle2', UInt16, self.callback_factory(1)),
-            rospy.Subscriber('/encoder_angle3', UInt16, self.callback_factory(2)),
+            # rospy.Subscriber('/kinikun1/encoder_angle1', UInt16, self.callback_factory(0)),
+            # rospy.Subscriber('/kinikun1/encoder_angle2', UInt16, self.callback_factory(1)),
             # rospy.Subscriber('/kinikun1/encoder_angle3', UInt16, self.callback_factory(2)),
-            rospy.Subscriber('/kinikun1/encoder_angle4', UInt16, self.callback_factory(3))
+            # rospy.Subscriber('/kinikun1/encoder_angle4', UInt16, self.callback_factory(3)),
+            rospy.Subscriber('/encoder_angle1', UInt16, self.callback_factory(0)),
+            rospy.Subscriber('/encoder_angle2', UInt16, self.callback_factory(1)),
+            rospy.Subscriber('/encoder_angle3', UInt16, self.callback_factory(2)),
+            rospy.Subscriber('/encoder_angle4', UInt16, self.callback_factory(3)),
         ]
 
         # Publisher

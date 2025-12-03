@@ -4,7 +4,7 @@ from __future__ import print_function # for print function in python2
 import sys, select, termios, tty
 
 import rospy
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Float32
 from aerial_robot_msgs.msg import FlightNav
 import rosgraph
 from geometry_msgs.msg import Quaternion
@@ -19,6 +19,7 @@ v1_min, v1_max = 0, 0.7
 v2_min, v2_max = 0, 0.7
 v3_min, v3_max = 0, 0.7
 v4_min, v4_max = 0, 0.7
+step_target_deg = 0.5  # 目標角度増減ステップ（deg単位）
 
 def mpa_to_dac(p_mpa):
     """
@@ -106,6 +107,11 @@ if __name__=="__main__":
 
         motion_start_pub = rospy.Publisher('task_start', Empty, queue_size=1)
         mpa_pub = rospy.Publisher('/mpa_cmd', Quaternion, queue_size=1)
+        target_deg_pub = rospy.Publisher('/mppi/theta_target_deg', Float32, queue_size=1)
+        target_deg2_pub= rospy.Publisher('/mppi/theta_target_deg_2', Float32, queue_size=1)
+        target1_deg = 0.0
+        target2_deg = 0.0
+        limit_deg = 35.0
 
         rospy.sleep(0.1)
         publish_mpa_cmd(mpa_pub)
@@ -224,6 +230,35 @@ if __name__=="__main__":
                                 publish_mpa_cmd(mpa_pub)
                                 v4 = mpa_to_dac(v4_mpa)
                                 msg = f"MPA4 down {v4_mpa:.2f} MPa (w = {v4})"
+                        
+                        # ---- ターゲット角度送信（ステップ増減）----
+                        if key == '1':
+                                # System1 目標：+step
+                                target1_deg = max(-limit_deg, min(limit_deg, target1_deg))
+                                target1_deg += step_target_deg
+                                target_deg_pub.publish(Float32(target1_deg))
+                                msg = f"theta_target_deg += {step_target_deg:.2f} -> {target1_deg:.2f} deg"
+
+                        if key == '2':
+                                # System1 目標：-step
+                                target1_deg = max(-limit_deg, min(limit_deg, target1_deg))
+                                target1_deg -= step_target_deg
+                                target_deg_pub.publish(Float32(target1_deg))
+                                msg = f"theta_target_deg -= {step_target_deg:.2f} -> {target1_deg:.2f} deg"
+
+                        if key == '3':
+                                # System2 目標：+step
+                                target2_deg = max(-limit_deg, min(limit_deg, target2_deg))
+                                target2_deg += step_target_deg
+                                target_deg2_pub.publish(Float32(target2_deg))
+                                msg = f"theta_target_deg_2 += {step_target_deg:.2f} -> {target2_deg:.2f} deg"
+
+                        if key == '4':
+                                # System2 目標：-step
+                                target2_deg = max(-limit_deg, min(limit_deg, target2_deg))
+                                target2_deg -= step_target_deg
+                                target_deg2_pub.publish(Float32(target2_deg))
+                                msg = f"theta_target_deg_2 -= {step_target_deg:.2f} -> {target2_deg:.2f} deg"
 
                         # ---- リセット ----
                         if key == 'c':

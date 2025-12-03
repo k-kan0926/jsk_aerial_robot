@@ -25,7 +25,6 @@
   <arg name="p_max" default="0.70"/>  <!-- Max pressure [MPa] -->
   <arg name="dp_max" default="3.5"/>  <!-- Max pressure rate [MPa/s] -->
   <arg name="pressure_delay_s" default="0.084"/>  <!-- Measured delay [s] -->
-
   
   <!-- Topics -->
   <arg name="theta_topic" default="/kinikun1/joint_states"/>
@@ -33,8 +32,6 @@
   <arg name="target_topic" default="/theta_target_deg"/>
   <arg name="pressure_topic" default="/mpa_pressure"/>
   <arg name="cmd_topic" default="/mpa_cmd"/>
-  <arg name="theta_index_2" default="3"/>    <!-- 新規: 2つ目のセンサー -->
-  <arg name="theta_diff_threshold" default="0.25"/>  <!-- 新規: 異常検知閾値 [rad] -->
   
   <!-- Logging -->
   <arg name="log_csv" default="$(find kinikun)/robots/kinikun/scripts/pressure_control/mppi/logs/mppi_log.csv"/>
@@ -43,7 +40,7 @@
   <arg name="publish_target" default="false"/>
   
   <!-- Node -->
-  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5_1_2p1a.py"
+  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5_0_2p1a.py"
         output="screen" respawn="false">
     
     <!-- Model -->
@@ -73,8 +70,6 @@
     <!-- Topics -->
     <param name="theta_topic" value="$(arg theta_topic)"/>
     <param name="theta_index" value="$(arg theta_index)"/>
-    <param name="theta_index_2" value="$(arg theta_index_2)"/>
-    <param name="theta_diff_threshold" value="$(arg theta_diff_threshold)"/>
     <param name="target_topic" value="$(arg target_topic)"/>
     <param name="pressure_topic" value="$(arg pressure_topic)"/>
     <param name="cmd_topic" value="$(arg cmd_topic)"/>
