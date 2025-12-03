@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 
 import rospy
 from std_msgs.msg import Float32, String
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3, Quaternion
 from sensor_msgs.msg import JointState
 
 import torch
@@ -212,12 +212,12 @@ class IntegratedMPPITuner:
         self.start_time = None
         
         # ========== ROS Interface ==========
-        self.pub_cmd = rospy.Publisher(self.cmd_topic, Vector3, queue_size=1)
+        self.pub_cmd = rospy.Publisher(self.cmd_topic, Quaternion, queue_size=1)
         self.pub_target = rospy.Publisher(self.target_topic, Float32, queue_size=1)
         
         self.sub_theta = rospy.Subscriber(self.theta_topic, JointState,
                                           self.cb_theta, queue_size=10)
-        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Vector3,
+        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Quaternion,
                                              self.cb_pressure, queue_size=50)
         
         rospy.loginfo("[Tuner] Integrated MPPI Tuner initialized")
@@ -269,7 +269,7 @@ class IntegratedMPPITuner:
                     self.p1_cmd_data.append(self.p1_cmd)
                     self.p2_cmd_data.append(self.p2_cmd)
     
-    def cb_pressure(self, msg: Vector3):
+    def cb_pressure(self, msg: Quaternion):
         with self.lock:
             self.p1_meas = float(msg.x)
             self.p2_meas = float(msg.y)
@@ -470,10 +470,11 @@ class IntegratedMPPITuner:
     
     def publish_cmd(self, p1, p2):
         """圧力指令を出力"""
-        msg = Vector3()
+        msg = Quaternion()
         msg.x = float(p1) * 4096.0 / 0.9
         msg.y = float(p2) * 4096.0 / 0.9
         msg.z = 0.0
+        msg.w = 0.0
         self.pub_cmd.publish(msg)
     
     # ========== Trajectory Execution ==========

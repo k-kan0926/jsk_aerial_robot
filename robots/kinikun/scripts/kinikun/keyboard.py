@@ -7,15 +7,37 @@ import rospy
 from std_msgs.msg import Empty
 from aerial_robot_msgs.msg import FlightNav
 import rosgraph
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Quaternion
 
 # --- グローバル変数 ---
-v1_mpa = 0.2  # MPa単位の初期値
-v2_mpa = 0.2  # 固定または別キーで操作してもOK
+v1_mpa = 0.2
+v2_mpa = 0.2
+v3_mpa = 0.2
+v4_mpa = 0.2
 step = 0.02   # 増減ステップ（MPa単位）
 v1_min, v1_max = 0, 0.7 
 v2_min, v2_max = 0, 0.7
+v3_min, v3_max = 0, 0.7
+v4_min, v4_max = 0, 0.7
 
+def mpa_to_dac(p_mpa):
+    """
+    MPa -> DACカウント(0〜4095)
+    0〜0.9MPa を 0〜4095 にマップ
+    """
+    if p_mpa < 0.0:
+        p_mpa = 0.0
+    if p_mpa > 0.9:
+        p_mpa = 0.9
+    return int(p_mpa * 4096.0 / 0.9)
+
+def publish_mpa_cmd(pub):
+    q = Quaternion()
+    q.x = mpa_to_dac(v1_mpa)
+    q.y = mpa_to_dac(v2_mpa)
+    q.z = mpa_to_dac(v3_mpa)
+    q.w = mpa_to_dac(v4_mpa)
+    pub.publish(q)
 
 msg = """
 Instruction:
@@ -83,7 +105,10 @@ if __name__=="__main__":
         yaw_vel  = rospy.get_param("yaw_vel", 0.2)
 
         motion_start_pub = rospy.Publisher('task_start', Empty, queue_size=1)
-        mpa_pub = rospy.Publisher('/mpa_cmd', Vector3, queue_size=1)
+        mpa_pub = rospy.Publisher('/mpa_cmd', Quaternion, queue_size=1)
+
+        rospy.sleep(0.1)
+        publish_mpa_cmd(mpa_pub)
 
         try:
                 while(True):
@@ -153,37 +178,62 @@ if __name__=="__main__":
                                 nav_msg.target_vel_z = -z_vel
                                 nav_pub.publish(nav_msg)
                                 msg = "send -z vel command"
-                        if key == 'z':
+                        # ---- MPA1 (Quaternion.x) ----
+                        if key == 'v':
                                 v1_mpa = min(v1_max, v1_mpa + step)
-                                v1 = v1_mpa * 4096 / 0.9
-                                v2 = v2_mpa * 4096 / 0.9
-                                mpa_pub.publish(Vector3(v1,v2, 0))
-                                msg = f"v1 up {v1_mpa:.2f} MPa (V1 = {v1:.0f})"
-                        if key == 'x':
+                                publish_mpa_cmd(mpa_pub)
+                                v1 = mpa_to_dac(v1_mpa)
+                                msg = f"MPA1 up   {v1_mpa:.2f} MPa (x = {v1})"
+                        if key == 'b':
                                 v1_mpa = max(v1_min, v1_mpa - step)
-                                v1 = v1_mpa * 4096 / 0.9
-                                v2 = v2_mpa * 4096 / 0.9
-                                mpa_pub.publish(Vector3(v1,v2, 0))
-                                msg = f"v1 down {v1_mpa:.2f} MPa (V1 = {v1:.0f})"
+                                publish_mpa_cmd(mpa_pub)
+                                v1 = mpa_to_dac(v1_mpa)
+                                msg = f"MPA1 down {v1_mpa:.2f} MPa (x = {v1})"
+
+                        # ---- MPA2 (Quaternion.y) ----
                         if key == 'n':
                                 v2_mpa = min(v2_max, v2_mpa + step)
-                                v1 = v1_mpa * 4096 / 0.9
-                                v2 = v2_mpa * 4096 / 0.9
-                                mpa_pub.publish(Vector3(v1,v2, 0))
-                                msg = f"v2 up {v2_mpa:.2f} MPa (V2 = {v2:.0f})"
+                                publish_mpa_cmd(mpa_pub)
+                                v2 = mpa_to_dac(v2_mpa)
+                                msg = f"MPA2 up   {v2_mpa:.2f} MPa (y = {v2})"
                         if key == 'm':
                                 v2_mpa = max(v2_min, v2_mpa - step)
-                                v1 = v1_mpa * 4096 / 0.9
-                                v2 = v2_mpa * 4096 / 0.9
-                                mpa_pub.publish(Vector3(v1,v2, 0))
-                                msg = f"v2 down {v2_mpa:.2f} MPa (V2 = {v2:.0f})"
+                                publish_mpa_cmd(mpa_pub)
+                                v2 = mpa_to_dac(v2_mpa)
+                                msg = f"MPA2 down {v2_mpa:.2f} MPa (y = {v2})"
+                        # ---- MPA3 (Quaternion.z) ----
+                        if key == 'j':
+                                v3_mpa = min(v3_max, v3_mpa + step)
+                                publish_mpa_cmd(mpa_pub)
+                                v3 = mpa_to_dac(v3_mpa)
+                                msg = f"MPA3 up   {v3_mpa:.2f} MPa (z = {v3})"
+                        if key == 'k':
+                                v3_mpa = max(v3_min, v3_mpa - step)
+                                publish_mpa_cmd(mpa_pub)
+                                v3 = mpa_to_dac(v3_mpa)
+                                msg = f"MPA3 down {v3_mpa:.2f} MPa (z = {v3})"
+
+                        # ---- MPA4 (Quaternion.w) ----
+                        if key == 'u':
+                                v4_mpa = min(v4_max, v4_mpa + step)
+                                publish_mpa_cmd(mpa_pub)
+                                v4 = mpa_to_dac(v4_mpa)
+                                msg = f"MPA4 up   {v4_mpa:.2f} MPa (w = {v4})"
+                        if key == 'i':
+                                v4_mpa = max(v4_min, v4_mpa - step)
+                                publish_mpa_cmd(mpa_pub)
+                                v4 = mpa_to_dac(v4_mpa)
+                                msg = f"MPA4 down {v4_mpa:.2f} MPa (w = {v4})"
+
+                        # ---- リセット ----
                         if key == 'c':
                                 v1_mpa = 0.2
                                 v2_mpa = 0.2
-                                v1 = v1_mpa * 4096 / 0.9
-                                v2 = v2_mpa * 4096 / 0.9
-                                mpa_pub.publish(Vector3(v1,v2, 0))
-                                msg = "reset to default pressure"
+                                v3_mpa = 0.2
+                                v4_mpa = 0.2
+                                publish_mpa_cmd(mpa_pub)
+                                msg = "reset all MPA to 0.20 MPa"
+
                         if key == '\x03':
                                 break
 
@@ -194,5 +244,4 @@ if __name__=="__main__":
                 print(repr(e))
         finally:
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-
 

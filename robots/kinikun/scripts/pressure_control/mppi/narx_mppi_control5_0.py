@@ -6,7 +6,7 @@ Production2モデル用の実時間MPPI制御ノード
 
 Features:
 - GPU並列推論による高速化
-- 遅延補償（pressure_delay_s は今後拡張用）
+- 遅延補償(pressure_delay_s は今後拡張用)
 - カルマンフィルタによるノイズ除去
 - 安全監視機構
 - 非同期ロギング
@@ -20,7 +20,7 @@ import asyncio  # 使っていないが今はそのまま
 import numpy as np
 import rospy
 from std_msgs.msg import Float32, String
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3, Quaternion
 from sensor_msgs.msg import JointState
 
 import torch
@@ -49,7 +49,7 @@ class SimpleKalmanFilter:
 
 
 class SafetyMonitor:
-    """簡易安全監視（stuck チェックはオプション）"""
+    """簡易安全監視(stuck チェックはオプション)"""
     def __init__(self, theta_rate_max=0.3, theta_abs_max=1.5,
                  enable_stuck_check=False, stuck_count_max=2000):
         self.last_theta = 0.0
@@ -120,7 +120,7 @@ class NARX_MPPI_Controller:
         self.dt = float(self.frame_skip) / self.rate_hz
         
         # MPPI
-        self.K = int(rospy.get_param("~K", 32))          # Population（GPU前提で小さめ）
+        self.K = int(rospy.get_param("~K", 32))          # Population(GPU前提で小さめ)
         self.H = int(rospy.get_param("~horizon", 15))    # Prediction horizon
         self.temperature = float(rospy.get_param("~lambda", 2.0))
         self.sigma_u = float(rospy.get_param("~sigma_u", 0.10))  # [MPa] ノイズ標準偏差
@@ -177,7 +177,7 @@ class NARX_MPPI_Controller:
         self.hist_dp1_dt = deque([0.0] * maxlen, maxlen=maxlen)
         self.hist_dp2_dt = deque([0.0] * maxlen, maxlen=maxlen)
         
-        # Pressure delay buffer（将来拡張用）
+        # Pressure delay buffer(将来拡張用)
         self.press_buf = deque(maxlen=200)  # (time, p1, p2)
         
         # Safety
@@ -193,14 +193,14 @@ class NARX_MPPI_Controller:
         self.comp_time_buf = deque(maxlen=100)
         
         # ========== ROS Interface ==========
-        self.pub_cmd = rospy.Publisher(self.cmd_topic, Vector3, queue_size=1)
+        self.pub_cmd = rospy.Publisher(self.cmd_topic, Quaternion, queue_size=1)
         self.pub_status = rospy.Publisher("/mppi/status", String, queue_size=1, latch=True)
         
         self.sub_theta = rospy.Subscriber(self.theta_topic, JointState,
                                           self.cb_theta, queue_size=10)
         self.sub_target = rospy.Subscriber(self.target_topic, Float32,
                                            self.cb_target, queue_size=1)
-        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Vector3,
+        self.sub_pressure = rospy.Subscriber(self.pressure_topic, Quaternion,
                                              self.cb_pressure, queue_size=50)
         
         # Logging
@@ -255,7 +255,7 @@ class NARX_MPPI_Controller:
     # ========== ROS Callbacks ==========
     
     def cb_theta(self, msg: JointState):
-        """関節角度のコールバック（カルマンフィルタ適用）"""
+        """関節角度のコールバック(カルマンフィルタ適用)"""
         if self.theta_index < len(msg.position):
             theta_raw = float(msg.position[self.theta_index])
             with self.lock:
@@ -263,10 +263,10 @@ class NARX_MPPI_Controller:
                 self.hist_theta.appendleft(self.theta_rad)
     
     def cb_target(self, msg: Float32):
-        """目標角度のコールバック（deg → rad）"""
+        """目標角度のコールバック(deg → rad)"""
         self.theta_ref_rad = math.radians(float(msg.data))
     
-    def cb_pressure(self, msg: Vector3):
+    def cb_pressure(self, msg: Quaternion):
         """圧力測定値のコールバック"""
         t = rospy.get_time()
         p1 = float(msg.x)
@@ -317,7 +317,7 @@ class NARX_MPPI_Controller:
     # ========== MPPI Core ==========
     
     def enforce_constraints(self, p1, p2, p1_prev, p2_prev, dt):
-        """物理制約を適用（レート + ボックス）"""
+        """物理制約を適用(レート + ボックス)"""
         # Rate limit
         dp_max_step = self.dp_max * dt
         p1 = np.clip(p1, p1_prev - dp_max_step, p1_prev + dp_max_step)
@@ -366,7 +366,7 @@ class NARX_MPPI_Controller:
         p1_seq = np.zeros((K, H), dtype=np.float32)
         p2_seq = np.zeros((K, H), dtype=np.float32)
 
-        # 初期状態（各候補で共通）
+        # 初期状態(各候補で共通)
         theta_k = np.full(K, theta0, dtype=np.float32)
         p1_k = np.full(K, p1_0, dtype=np.float32)
         p2_k = np.full(K, p2_0, dtype=np.float32)
@@ -408,14 +408,14 @@ class NARX_MPPI_Controller:
             dp1 = U[:, h, 0]
             dp2 = U[:, h, 1]
 
-            # 前回値を控えてから更新（レート制約用）
+            # 前回値を控えてから更新(レート制約用)
             p1_prev = p1_k.copy()
             p2_prev = p2_k.copy()
 
             p1_k = p1_k + dp1
             p2_k = p2_k + dp2
 
-            # 制約適用（1本ずつで十分：K は小さい）
+            # 制約適用(1本ずつで十分:K は小さい)
             for i in range(K):
                 p1_k[i], p2_k[i] = self.enforce_constraints(
                     p1_k[i], p2_k[i], p1_prev[i], p2_prev[i], dt
@@ -425,7 +425,7 @@ class NARX_MPPI_Controller:
             dp1_dt = (p1_k - p1_prev) / dt
             dp2_dt = (p2_k - p2_prev) / dt
 
-            # === 2) 履歴を更新（最新値を先頭に push） ===
+            # === 2) 履歴を更新(最新値を先頭に push) ===
             theta_hist = np.concatenate(
                 [theta_k[:, None], theta_hist[:, :-1]], axis=1
             )
@@ -535,7 +535,7 @@ class NARX_MPPI_Controller:
         # Publish
         self.publish_cmd(p1_cmd, p2_cmd)
         
-        # Update history（実機側の履歴）
+        # Update history(実機側の履歴)
         with self.lock:
             self.p1_cmd = p1_cmd
             self.p2_cmd = p2_cmd
@@ -552,7 +552,7 @@ class NARX_MPPI_Controller:
         # Performance monitoring
         comp_time = time.time() - t_start
         self.comp_time_buf.append(comp_time)
-        # 制御周期の 80% を超えたら一応 warn（今は黙らせてもOK）
+        # 制御周期の 80% を超えたら一応 warn(今は黙らせてもOK)
         # if comp_time > dt * 0.8:
         #     rospy.logwarn(
         #         f"[MPPI] Computation time high: {comp_time*1000:.1f}ms (limit: {dt*1000:.1f}ms)"
@@ -578,12 +578,13 @@ class NARX_MPPI_Controller:
     # ========== Command Publishing ==========
     
     def publish_cmd(self, p1, p2):
-        """圧力指令を出力（ハード側スケーリング込み）"""
-        msg = Vector3()
-        # MPa → DAC値への変換（4096 / 0.9）
+        """圧力指令を出力(ハード側スケーリング込み)"""
+        msg = Quaternion()
+        # MPa → DAC値への変換(4096 / 0.9)
         msg.x = float(p1) * 4096.0 / 0.9
         msg.y = float(p2) * 4096.0 / 0.9
         msg.z = 0.0
+        msg.w = 0.0
         self.pub_cmd.publish(msg)
     
     # ========== Logging ==========
