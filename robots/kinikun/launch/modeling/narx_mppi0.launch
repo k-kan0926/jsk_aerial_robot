@@ -28,7 +28,7 @@
   
   <!-- Topics -->
   <arg name="theta_topic" default="/kinikun1/joint_states"/>
-  <arg name="theta_index" default="1"/>
+  <arg name="theta_index" default="3"/>
   <arg name="target_topic" default="/theta_target_deg"/>
   <arg name="pressure_topic" default="/mpa_pressure"/>
   <arg name="cmd_topic" default="/mpa_cmd"/>
