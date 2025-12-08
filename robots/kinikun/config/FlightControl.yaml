@@ -1,4 +1,4 @@
-aerial_robot_control_name: aerial_robot_control/under_actuated_tilted_lqi_controller
+aerial_robot_control_name: aerial_robot_control/kinikun_controller
 
 controller:
   xy:
@@ -51,4 +51,23 @@ controller:
 
     trans_constraint_weight: 100
     att_control_weight: 1
+
+  # 外部力推定設定
+  wrench_estimate_flag: false
+  wrench_estimate_update_rate: 100.0
+  momentum_observer_force_weight: 10.0
+  momentum_observer_torque_weight: 10.0
+  
+  # 外部力補償設定
+  wrench_comp_mode: false
+  comp_term_update_freq: 10.0
+  external_force_upper_limit: 5.0
+  external_force_lower_limit: -5.0
+  external_torque_upper_limit: 0.5
+  external_torque_lower_limit: -0.5
+  
+  wrench_comp:
+    p_gain: 0.1
+    i_gain: 0.005
+    d_gain: 0.07
 

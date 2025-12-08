@@ -2,7 +2,7 @@
 estimation:
         # sensor plugin
         sensor_list:
-        - sensor_plugin/imu
+        - sensor_plugin/kinikun_imu
         - sensor_plugin/mocap
 
         # egomotion estimation

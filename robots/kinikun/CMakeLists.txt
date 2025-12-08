@@ -6,13 +6,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(catkin REQUIRED COMPONENTS
   aerial_robot_control
-  aerial_robot_estimation
   aerial_robot_model
   aerial_robot_msgs
   diagnostic_msgs
   pluginlib
   roscpp
   dynamic_reconfigure
+  std_msgs
+  message_generation
+  geometry_msgs
 )
 
 find_package(Eigen3 REQUIRED)
@@ -21,7 +23,7 @@ find_package(Eigen3 REQUIRED)
 # 環境変数 ACADOS_SOURCE_DIR があればそっちを優先
 set(ACADOS_ROOT $ENV{ACADOS_SOURCE_DIR})
 if(NOT ACADOS_ROOT)
-  set(ACADOS_ROOT /home/kan/acados)
+  set(ACADOS_ROOT /home/keiichiro/acados)
 endif()
 
 # 生成コードがある場所（あなたのツリーに合わせる）
@@ -80,11 +82,19 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   CATKIN_DEPENDS
     aerial_robot_control
-    aerial_robot_estimation
     aerial_robot_model
     dynamic_reconfigure
+    aerial_robot_msgs
+    pluginlib
+    roscpp
+    diagnostic_msgs
+    std_msgs
+    geometry_msgs
+    message_runtime
   INCLUDE_DIRS include
-  LIBRARIES kinikun_acados_generated
+  LIBRARIES 
+    kinikun_acados_generated
+    kinikun_controller
 )
 
 # 生成したacadosコードの場所をターゲットにも見せる
@@ -99,6 +109,14 @@ include_directories(
   ${KINIKUN_ACADOS_GEN_DIR}
 )
 
+add_library(kinikun_sensor_pluginlib  src/sensor/imu.cpp)
+target_link_libraries(kinikun_sensor_pluginlib ${catkin_LIBRARIES})
+add_dependencies(kinikun_sensor_pluginlib aerial_robot_msgs_generate_messages_cpp spinal_generate_messages_cpp)
+
+add_library(kinikun_controller src/control/kinikun_controller.cpp)
+target_link_libraries(kinikun_controller kinikun_sensor_pluginlib ${catkin_LIBRARIES})
+
+
 # あなたのノード (mpa_acados_node.cpp とか) をここでビルド
 add_executable(mpa_acados_node
   src/mpa_acados_node.cpp
@@ -109,7 +127,12 @@ target_link_libraries(mpa_acados_node
   kinikun_acados_generated
 )
 
-install(DIRECTORY config launch scripts
+install(TARGETS kinikun_sensor_pluginlib kinikun_controller
+  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+
+install(DIRECTORY config plugins launch scripts
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )

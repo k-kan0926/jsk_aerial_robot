@@ -1,0 +1,5 @@
+<library path="lib/libkinikun_controller">
+  <class name="aerial_robot_control/kinikun_controller" type="aerial_robot_control::KinikunController" base_class_type="aerial_robot_control::ControlBase">
+    <description>plugin for kinikun control </description>
+  </class>
+</library>
