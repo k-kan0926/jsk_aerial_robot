@@ -114,7 +114,7 @@ namespace sensor_plugin
     /* acc bias */
     tf::Vector3 acc_bias_b_; /* the acceleration bias in baselink frame, only use z axis  */
     tf::Vector3 acc_bias_l_; /* the acceleration bias in level frame as to baselink frame: previously is acc_i */
-    tf::Vector3 acc_bias_w_; /* the acceleration bias in world frame */
+    std::array<tf::Vector3, 2> acc_bias_w_; /* the acceleration bias in world frame */
     bool treat_imu_as_ground_truth_; /* whether use imu value as ground truth */
     /* IIR filter*/
     boost::mutex omega_mutex_;

@@ -111,11 +111,21 @@ namespace sensor_plugin
             return;
           }
 
-        acc_b_[i] = imu_msg->acc_data[i];
-        euler_[i] = imu_msg->angles[i];
-        omega_[i] = imu_msg->gyro_data[i];
-        mag_[i] = imu_msg->mag_data[i];
+        acc_b_[i] = imu_msg->acc[i]; // baselink frame
+        omega_[i] = imu_msg->gyro[i];  // baselink frame
+        mag_[i] = imu_msg->mag[i];  // baselink frame
       }
+    if(std::isnan(imu_msg->quaternion[0]) || std::isnan(imu_msg->quaternion[1]) ||
+       std::isnan(imu_msg->quaternion[2]) || std::isnan(imu_msg->quaternion[3]))
+      {
+        ROS_ERROR_THROTTLE(1.0, "IMU plugin receives Nan value in Quaternion!");
+        return;
+      }
+
+    tf::Quaternion raw_q(imu_msg->quaternion[0], imu_msg->quaternion[1],
+                         imu_msg->quaternion[2], imu_msg->quaternion[3]);
+    raw_rot_ = tf::Matrix3x3(raw_q);
+
 
     if(first_flag)
       {

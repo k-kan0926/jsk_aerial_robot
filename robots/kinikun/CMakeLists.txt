@@ -21,7 +21,7 @@ find_package(Eigen3 REQUIRED)
 # 環境変数 ACADOS_SOURCE_DIR があればそっちを優先
 set(ACADOS_ROOT $ENV{ACADOS_SOURCE_DIR})
 if(NOT ACADOS_ROOT)
-  set(ACADOS_ROOT /home/kan/acados)
+  set(ACADOS_ROOT /home/keiichiro/acados)
 endif()
 
 # 生成コードがある場所（あなたのツリーに合わせる）
@@ -84,7 +84,7 @@ catkin_package(
     aerial_robot_model
     dynamic_reconfigure
   INCLUDE_DIRS include
-  LIBRARIES kinikun_acados_generated
+  LIBRARIES kinikun_acados_generated kinikun_controller
 )
 
 # 生成したacadosコードの場所をターゲットにも見せる
@@ -109,7 +109,15 @@ target_link_libraries(mpa_acados_node
   kinikun_acados_generated
 )
 
-install(DIRECTORY config launch scripts
+### flight control plugin
+add_library(kinikun_controller_pluginlib
+  src/kinikun_tilted_lqi_controller.cpp)
+target_link_libraries(kinikun_controller_pluginlib 
+${catkin_LIBRARIES} ${EIGEN3_LIBRARIES})
+
+add_dependencies(kinikun_controller_pluginlib aerial_robot_msgs_generate_messages_cpp spinal_generate_messages_cpp)
+
+install(DIRECTORY config launch scripts plugins
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )
