@@ -2,7 +2,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2021, JSK Lab
+ *  Copyright (c) 2020, JSK Lab
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,27 +33,27 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <dragon/sensor/imu.h>
+#pragma once
 
-namespace
-{
-  bool first_flag = true;
-};
+#include <aerial_robot_control/control/under_actuated_tilted_lqi_controller.h>
+#include <spinal/PMatrixPseudoInverseWithInertia.h>
+#include <thread>
 
-namespace sensor_plugin
+namespace aerial_robot_control
 {
-  void DragonImu::initialize(ros::NodeHandle nh,
-                  boost::shared_ptr<aerial_robot_model::RobotModel> robot_model,
-                  boost::shared_ptr<aerial_robot_estimation::StateEstimator> estimator,
-                  string sensor_name, int index)
+  class KinikunTiltedLQIController: public UnderActuatedTiltedLQIController
   {
-    Imu::initialize(nh, robot_model, estimator, std::string("sensor_plugin/imu"), index);
-  }
+  public:
+    KinikunTiltedLQIController();
+    ~KinikunTiltedLQIController() = default;
 
+    void initialize(ros::NodeHandle nh, ros::NodeHandle nhp,
+                    boost::shared_ptr<aerial_robot_model::RobotModel> robot_model,
+                    boost::shared_ptr<aerial_robot_estimation::StateEstimator> estimator,
+                    boost::shared_ptr<aerial_robot_navigation::BaseNavigator> navigator,
+                    double ctrl_loop_rate);
+
+  protected:
+    void controlCore() override;
+  };
 };
-/* plugin registration */
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(sensor_plugin::DragonImu, sensor_plugin::SensorBase);
-
-
-

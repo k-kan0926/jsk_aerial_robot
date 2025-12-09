@@ -1,6 +1,7 @@
-aerial_robot_control_name: aerial_robot_control/under_actuated_tilted_lqi_controller
+aerial_robot_control_name: aerial_robot_control/kinikun_tilted_lqi_controller
 
 controller:
+  wrench_estimate_flag: true
   xy:
     p_gain: 4.6
     i_gain: 0.08
