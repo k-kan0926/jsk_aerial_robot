@@ -29,9 +29,9 @@
   
   <!-- Topics -->
   <arg name="theta_topic" default="/kinikun1/joint_states"/>
-  <arg name="theta_index" default="1"/>
-  <arg name="theta_index_2" default="3"/>    <!-- 新規: 2つ目のセンサー -->
-  <arg name="theta_index_3" default="0"/>    <!-- 新規: 3つ目のセンサー -->
+  <arg name="theta_index" default="3"/>
+  <arg name="theta_index_2" default="0"/>    <!-- 新規: 2つ目のセンサー -->
+  <arg name="theta_index_3" default="1"/>    <!-- 新規: 3つ目のセンサー -->
   <arg name="theta_index_4" default="2"/>    <!-- 新規: 4つ目のセンサー -->
   <arg name="target_topic" default="/mppi/theta_target_deg"/>
   <arg name="target_topic_2" default="/mppi/theta_target_deg_2"/>  <!-- 新規: 2つ目のターゲット -->

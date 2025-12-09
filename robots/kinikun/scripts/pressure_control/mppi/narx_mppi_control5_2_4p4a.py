@@ -514,12 +514,14 @@ class NARX_MPPI_Controller:
             # System 1
             theta_0 = float(msg.position[self.theta_index_2])
             theta_2 = float(msg.position[self.theta_index])
-            self.system1.update_theta(theta_0, theta_2)
+            theta_0_corrected = -theta_0
+            self.system1.update_theta(theta_0_corrected, theta_2)
             
             # System 2
             theta_3 = float(msg.position[self.theta_index_3])
             theta_4 = float(msg.position[self.theta_index_4])
-            self.system2.update_theta(theta_3, theta_4)
+            theta_4_corrected = -theta_4
+            self.system2.update_theta(theta_3, theta_4_corrected)
     
     def cb_target(self, msg: Float32):
         """System1の目標角度"""

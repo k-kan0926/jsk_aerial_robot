@@ -25,16 +25,12 @@ class JoyMPAController:
         self.active_pair = 1
         self.prev_axes = []
 
-
-        
         # --- Button indices (PS4 controller) ---
-        # 標準的なPS4マッピング
         self.BTN_SQUARE = 0   # □ (v4)
         self.BTN_CROSS = 1    # × (v1)
         self.BTN_CIRCLE = 2   # ○ (v2)
         self.BTN_TRIANGLE = 3 # △ (v3)
-        # D-Padが入っているaxesのインデックス（例）
-        self.DPAD_V_AXIS = 10  # 上/下（これでペア切り替え）
+        self.DPAD_V_AXIS = 10  # 上/下（ペア切り替え）
         self.BTN_L1 = 4
         self.BTN_R1 = 5
         self.BTN_L2 = 6
@@ -42,8 +38,9 @@ class JoyMPAController:
         
         # --- Publishers ---
         self.mpa_pub = rospy.Publisher('/mpa_cmd', Quaternion, queue_size=1)
-        self.target1_pub = rospy.Publisher('/mppi/theta_target_deg', Float32, queue_size=1)
-        self.target2_pub = rospy.Publisher('/mppi/theta_target_deg_2', Float32, queue_size=1)
+        # B-splineノードへのコマンド（直接theta_targetではなくcmdトピックへ）
+        self.target1_pub = rospy.Publisher('/mppi/target_deg_cmd', Float32, queue_size=1)
+        self.target2_pub = rospy.Publisher('/mppi/target_deg_cmd2', Float32, queue_size=1)
         
         # --- Subscriber ---
         self.joy_sub = rospy.Subscriber('/kinikun1/joy', Joy, self.joy_callback)
@@ -51,18 +48,23 @@ class JoyMPAController:
         # Previous button states for edge detection
         self.prev_buttons = []
         
-        rospy.loginfo("Joy MPA Controller initialized")
+        rospy.loginfo("Joy MPA Controller initialized (B-spline mode)")
         rospy.loginfo("Button mapping:")
-        rospy.loginfo("  MPA increase: L2 + (×:v1, ○:v2, △:v3, □:v4)")
-        rospy.loginfo("  MPA decrease: R2 + (×:v1, ○:v2, △:v3, □:v4)")
+        rospy.loginfo("  MPA increase: L2 + (□:v1/v3, ○:v2/v4)")
+        rospy.loginfo("  MPA decrease: R2 + (□:v1/v3, ○:v2/v4)")
+        rospy.loginfo("  D-Pad Up: Switch active MPA pair (1<->2)")
         rospy.loginfo("  Target1 increase: L1 + □")
         rospy.loginfo("  Target1 decrease: R1 + □")
         rospy.loginfo("  Target2 increase: L1 + ○")
         rospy.loginfo("  Target2 decrease: R1 + ○")
+        rospy.loginfo("Target commands are sent to B-spline node for smooth interpolation")
         
-        # Publish initial MPA values
+        # Publish initial values
         rospy.sleep(0.1)
         self.publish_mpa_cmd()
+        # 初期目標角度もB-splineノードへ送信
+        self.target1_pub.publish(Float32(self.target1_deg))
+        self.target2_pub.publish(Float32(self.target2_deg))
     
     def mpa_to_dac(self, p_mpa):
         """Convert MPa to DAC count (0-4095)"""
@@ -99,6 +101,7 @@ class JoyMPAController:
         if btn_idx >= len(buttons):
             return False
         return buttons[btn_idx] == 1
+
     def joy_callback(self, msg):
         buttons = msg.buttons
         axes = msg.axes
@@ -110,7 +113,6 @@ class JoyMPAController:
             return
 
         # ========= 十字キー（D-Pad）処理 =========
-        # 上下左右は axes[self.DPAD_V_AXIS], axes[self.DPAD_H_AXIS] の ±1.0 前後で出る想定
         dpad_v = axes[self.DPAD_V_AXIS] if self.DPAD_V_AXIS < len(axes) else 0.0
         prev_dpad_v = (
             self.prev_axes[self.DPAD_V_AXIS]
@@ -118,19 +120,14 @@ class JoyMPAController:
             else 0.0
         )
 
-        # 「ニュートラル(≈0) → 上方向(>0.5)」に遷移した瞬間を「十字上が押された」とみなす
-        # ※もし「上」が -1.0 の場合は、条件を「prev_dpad_v >= -0.5 and dpad_v < -0.5」に変えてください
         dpad_up_pressed = (prev_dpad_v <= 0.5 and dpad_v > 0.5)
 
         if dpad_up_pressed:
-            # MPAペア切り替え: 1:(v1,v2) <-> 2:(v3,v4)
             self.active_pair = 2 if self.active_pair == 1 else 1
             rospy.loginfo(f"[JoyMPA] Active MPA pair switched to {self.active_pair}")
 
         # ========= MPA圧力制御 =========
-        # L2 + □/○ でアクティブペアの各MPAを増加
         if self.button_is_held(self.BTN_L2, buttons):
-            # 1本目 (v1 or v3) を増加: L2 + □
             if self.button_pressed(self.BTN_SQUARE, buttons):
                 if self.active_pair == 1:
                     self.v1_mpa = self.clamp_mpa(self.v1_mpa + self.mpa_step)
@@ -142,7 +139,6 @@ class JoyMPAController:
                     rospy.loginfo(f"[JoyMPA] v3 ++ -> {self.v3_mpa:.3f} MPa (DAC {dac})")
                 self.publish_mpa_cmd()
 
-            # 2本目 (v2 or v4) を増加: L2 + ○
             if self.button_pressed(self.BTN_CIRCLE, buttons):
                 if self.active_pair == 1:
                     self.v2_mpa = self.clamp_mpa(self.v2_mpa + self.mpa_step)
@@ -154,9 +150,7 @@ class JoyMPAController:
                     rospy.loginfo(f"[JoyMPA] v4 ++ -> {self.v4_mpa:.3f} MPa (DAC {dac})")
                 self.publish_mpa_cmd()
 
-        # R2 + □/○ でアクティブペアの各MPAを減少
         if self.button_is_held(self.BTN_R2, buttons):
-            # 1本目 (v1 or v3) を減少: R2 + □
             if self.button_pressed(self.BTN_SQUARE, buttons):
                 if self.active_pair == 1:
                     self.v1_mpa = self.clamp_mpa(self.v1_mpa - self.mpa_step)
@@ -168,7 +162,6 @@ class JoyMPAController:
                     rospy.loginfo(f"[JoyMPA] v3 -- -> {self.v3_mpa:.3f} MPa (DAC {dac})")
                 self.publish_mpa_cmd()
 
-            # 2本目 (v2 or v4) を減少: R2 + ○
             if self.button_pressed(self.BTN_CIRCLE, buttons):
                 if self.active_pair == 1:
                     self.v2_mpa = self.clamp_mpa(self.v2_mpa - self.mpa_step)
@@ -180,42 +173,33 @@ class JoyMPAController:
                     rospy.loginfo(f"[JoyMPA] v4 -- -> {self.v4_mpa:.3f} MPa (DAC {dac})")
                 self.publish_mpa_cmd()
 
-        # ========= 目標角度制御 =========
-        # target1: L1/R1 + □
-        # target2: L1/R1 + ○
-
-        # 増加側: L1 + □/○
+        # ========= 目標角度制御 (B-splineノードへcmd送信) =========
         if self.button_is_held(self.BTN_L1, buttons):
-            # target1++
             if self.button_pressed(self.BTN_SQUARE, buttons):
                 self.target1_deg = self.clamp_angle(self.target1_deg + self.angle_step)
                 self.target1_pub.publish(Float32(self.target1_deg))
-                rospy.loginfo(f"[JoyMPA] target1 ++ -> {self.target1_deg:.2f} deg")
+                rospy.loginfo(f"[JoyMPA] target1_cmd -> {self.target1_deg:.2f} deg (via B-spline)")
 
-            # target2++
             if self.button_pressed(self.BTN_CIRCLE, buttons):
                 self.target2_deg = self.clamp_angle(self.target2_deg + self.angle_step)
                 self.target2_pub.publish(Float32(self.target2_deg))
-                rospy.loginfo(f"[JoyMPA] target2 ++ -> {self.target2_deg:.2f} deg")
+                rospy.loginfo(f"[JoyMPA] target2_cmd -> {self.target2_deg:.2f} deg (via B-spline)")
 
-        # 減少側: R1 + □/○
         if self.button_is_held(self.BTN_R1, buttons):
-            # target1--
             if self.button_pressed(self.BTN_SQUARE, buttons):
                 self.target1_deg = self.clamp_angle(self.target1_deg - self.angle_step)
                 self.target1_pub.publish(Float32(self.target1_deg))
-                rospy.loginfo(f"[JoyMPA] target1 -- -> {self.target1_deg:.2f} deg")
+                rospy.loginfo(f"[JoyMPA] target1_cmd -> {self.target1_deg:.2f} deg (via B-spline)")
 
-            # target2--
             if self.button_pressed(self.BTN_CIRCLE, buttons):
                 self.target2_deg = self.clamp_angle(self.target2_deg - self.angle_step)
                 self.target2_pub.publish(Float32(self.target2_deg))
-                rospy.loginfo(f"[JoyMPA] target2 -- -> {self.target2_deg:.2f} deg")
+                rospy.loginfo(f"[JoyMPA] target2_cmd -> {self.target2_deg:.2f} deg (via B-spline)")
 
         # ========= 前回状態を更新 =========
         self.prev_buttons = list(buttons)
         self.prev_axes = list(axes)
-    
+
 
 if __name__ == '__main__':
     try:

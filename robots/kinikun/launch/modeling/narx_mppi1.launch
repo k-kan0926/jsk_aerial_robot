@@ -29,11 +29,11 @@
   
   <!-- Topics -->
   <arg name="theta_topic" default="/kinikun1/joint_states"/>
-  <arg name="theta_index" default="1"/>
+  <arg name="theta_index" default="3"/>
   <arg name="target_topic" default="/theta_target_deg"/>
   <arg name="pressure_topic" default="/mpa_pressure"/>
   <arg name="cmd_topic" default="/mpa_cmd"/>
-  <arg name="theta_index_2" default="3"/>    <!-- 新規: 2つ目のセンサー -->
+  <arg name="theta_index_2" default="1"/>    <!-- 新規: 2つ目のセンサー -->
   <arg name="theta_diff_threshold" default="0.25"/>  <!-- 新規: 異常検知閾値 [rad] -->
   
   <!-- Logging -->
@@ -43,7 +43,7 @@
   <arg name="publish_target" default="false"/>
   
   <!-- Node -->
-  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5_1_2p1a.py"
+  <node name="narx_mppi_controller" pkg="kinikun" type="narx_mppi_control5_1_2p2a.py"
         output="screen" respawn="false">
     
     <!-- Model -->
