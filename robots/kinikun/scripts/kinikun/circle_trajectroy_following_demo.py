@@ -12,7 +12,7 @@ class CircTrajFollow():
   def __init__(self):
     # パラメータ
     self.period = rospy.get_param("~period", 40.0)
-    self.radius = rospy.get_param("~radius", 0.7)
+    self.radius = rospy.get_param("~radius", 0.5)
     self.init_theta = rospy.get_param("~init_theta", 0.0)
     self.yaw = rospy.get_param("~yaw", False)
     self.loop_count = rospy.get_param("~loop_count", 3)  # 0: 無限ループ, 1以上: 指定回数
