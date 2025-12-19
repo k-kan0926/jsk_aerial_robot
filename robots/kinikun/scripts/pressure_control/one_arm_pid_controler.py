@@ -21,7 +21,7 @@ one_arm_pid_controller.py  ― 完成版
 import math
 import rospy
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3,Quaternion
 from std_msgs.msg import Float64
 from dynamic_reconfigure.server import Server
 from kinikun.cfg import PIDConfig
@@ -53,7 +53,7 @@ class OneArmPID:
         # ---------------- Subscriber / Publisher ----------------
         rospy.Subscriber("/kinikun1/joint_states", JointState, self.joint_cb, queue_size=10)
         rospy.Subscriber("/target_angle", Float64, self.target_cb, queue_size=10)
-        self.pub_mpa = rospy.Publisher("mpa_cmd", Vector3, queue_size=10)
+        self.pub_mpa = rospy.Publisher("mpa_cmd", Quaternion, queue_size=10)
 
         # ---------------- 制御ループ ----------------
         self.timer = rospy.Timer(rospy.Duration(1.0 / self.rate_hz), self.control_loop)
@@ -105,7 +105,7 @@ class OneArmPID:
         v2 = p2 * 4096 / 0.9
 
         # Publish
-        self.pub_mpa.publish(Vector3(v1, v2, 0.0))
+        self.pub_mpa.publish(Quaternion(v1, v2, 0.0, 0.0))
 
         rospy.loginfo_throttle(
             0.5,

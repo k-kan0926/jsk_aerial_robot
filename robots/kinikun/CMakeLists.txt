@@ -75,6 +75,7 @@ generate_dynamic_reconfigure_options(
   config/PID.cfg
   config/Angle_PID.cfg
   config/NarxController.cfg
+  config/RelativePID.cfg
 )
 
 catkin_package(
