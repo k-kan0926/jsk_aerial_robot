@@ -67,7 +67,6 @@ class RelativePoseController:
         self.last_time = rospy.Time.now()
         self.current_rpy = [0.0, 0.0, 0.0]
         self.relative_pos = [0.0, 0.0, 0.0]
-
         self.pub_cmd = rospy.Publisher("mpa_cmd", Quaternion, queue_size=1)
         self.pub_debug_rpy = rospy.Publisher("debug_relative_rpy", Vector3, queue_size=1)
 
@@ -82,9 +81,6 @@ class RelativePoseController:
         rospy.loginfo("Relative Pose PID Controller Started (ROLL + YAW).")
 
     def reconfigure_cb(self, config, level):
-        # ===== IMPORTANT =====
-        # ここは cfg 側のパラメータ名に合わせてください。
-        # もし cfg がまだ pitch_* のままなら、roll_* を pitch_* に読み替える必要があります。
         self.pid_roll.kp = config.roll_kp
         self.pid_roll.ki = config.roll_ki
         self.pid_roll.kd = config.roll_kd
@@ -129,16 +125,12 @@ class RelativePoseController:
         self.current_rpy = [r, p, y]
         self.pub_debug_rpy.publish(Vector3(r, p, y))
 
-        # ===== Roll error (was Pitch) =====
         err_roll = normalize_angle(self.target_roll - r)
         err_yaw  = normalize_angle(self.target_yaw  - y)
 
         u_roll = self.pid_roll.update(err_roll, dt)
         u_yaw  = self.pid_yaw.update(err_yaw, dt)
 
-        # ===== Pressure mapping =====
-        # p1,p2: Roll pair
-        # p3,p4: Yaw  pair
         p1 = clamp(self.pressure_base + u_roll, 0.0, self.pressure_max)
         p2 = clamp(self.pressure_base - u_roll, 0.0, self.pressure_max)
         p3 = clamp(self.pressure_base + u_yaw,  0.0, self.pressure_max)

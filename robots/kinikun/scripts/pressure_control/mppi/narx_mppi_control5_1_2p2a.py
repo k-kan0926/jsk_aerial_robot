@@ -1,21 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-narx_mppi_controller_production.py
-Production2モデル用の実時間MPPI制御ノード
-
-Features:
-- GPU並列推論による高速化
-- 遅延補償(pressure_delay_s は今後拡張用)
-- 2センサー融合カルマンフィルタによるノイズ除去
-- 安全監視機構
-- 非同期ロギング
-
-"""
 import os, json, time, math, threading
 from collections import deque
 from typing import Tuple
-import asyncio  # 使っていないが今はそのまま
+import asyncio
 
 import numpy as np
 import rospy
@@ -29,7 +17,6 @@ import torch.nn as nn
 # ==================== Utility Classes ====================
 
 class DualSensorKalmanFilter:
-    """2センサー融合カルマンフィルタ"""
     def __init__(self, process_noise=1e-5, 
                  measurement_noise_1=5e-4, 
                  measurement_noise_2=5e-4):
@@ -40,16 +27,12 @@ class DualSensorKalmanFilter:
         self.x = 0.0
     
     def update_dual(self, z1, z2):
-        """2つの測定値で更新"""
-        # 予測
         P_pred = self.P + self.Q
         
-        # センサー1で更新
         K1 = P_pred / (P_pred + self.R1)
         x_temp = self.x + K1 * (z1 - self.x)
         P_temp = (1 - K1) * P_pred
         
-        # センサー2で更新
         K2 = P_temp / (P_temp + self.R2)
         self.x = x_temp + K2 * (z2 - x_temp)
         self.P = (1 - K2) * P_temp
@@ -62,7 +45,6 @@ class DualSensorKalmanFilter:
 
 
 class SafetyMonitor:
-    """簡易安全監視(stuck チェックはオプション)"""
     def __init__(self, theta_rate_max=0.3, theta_abs_max=1.5,
                  enable_stuck_check=False, stuck_count_max=2000):
         self.last_theta = 0.0
@@ -120,9 +102,7 @@ class MLP_NARX(nn.Module):
 
 # ==================== MPPI Controller ====================
 
-class NARX_MPPI_Controller:
-    """NARX-MPPI制御ノード"""
-    
+class NARX_MPPI_Controller:    
     def __init__(self):
         rospy.init_node('narx_mppi_controller', anonymous=False)
         
@@ -133,10 +113,10 @@ class NARX_MPPI_Controller:
         self.dt = float(self.frame_skip) / self.rate_hz
         
         # MPPI
-        self.K = int(rospy.get_param("~K", 32))          # Population(GPU前提で小さめ)
+        self.K = int(rospy.get_param("~K", 32))          # Population
         self.H = int(rospy.get_param("~horizon", 15))    # Prediction horizon
         self.temperature = float(rospy.get_param("~lambda", 2.0))
-        self.sigma_u = float(rospy.get_param("~sigma_u", 0.10))  # [MPa] ノイズ標準偏差
+        self.sigma_u = float(rospy.get_param("~sigma_u", 0.10))
         
         # Costs
         self.w_tracking = float(rospy.get_param("~w_tracking", 30.0))
@@ -152,8 +132,8 @@ class NARX_MPPI_Controller:
         # Topics
         self.theta_topic = rospy.get_param("~theta_topic", "/kinikun1/joint_states")
         self.theta_index = int(rospy.get_param("~theta_index", 2))
-        self.theta_index_2 = int(rospy.get_param("~theta_index_2", 0))  # 追加：2つ目のセンサーインデックス
-        self.theta_diff_threshold = float(rospy.get_param("~theta_diff_threshold", 0.1))  # 追加：異常検知閾値 [rad]
+        self.theta_index_2 = int(rospy.get_param("~theta_index_2", 0))
+        self.theta_diff_threshold = float(rospy.get_param("~theta_diff_threshold", 0.1))
         self.target_topic = rospy.get_param("~target_topic", "/theta_target_deg")
         self.pressure_topic = rospy.get_param("~pressure_topic", "/mpa_pressure")
         self.cmd_topic = rospy.get_param("~cmd_topic", "/mpa_cmd")
@@ -162,7 +142,7 @@ class NARX_MPPI_Controller:
         self.log_path = rospy.get_param("~log_csv", "")
         self.log_buffer = deque(maxlen=10000)
         self.log_thread = None
-        self.log_file = None  # 後で close で落ちないように初期化
+        self.log_file = None
         
         # ========== Load Model ==========
         rospy.loginfo("[MPPI] Loading model...")
@@ -173,7 +153,6 @@ class NARX_MPPI_Controller:
         
         # Filtered state
         self.theta_rad = 0.0
-        # 2センサー融合カルマンフィルタに変更
         self.theta_filter = DualSensorKalmanFilter(
             process_noise=1e-5, 
             measurement_noise_1=5e-4,
@@ -189,7 +168,6 @@ class NARX_MPPI_Controller:
         # Target
         self.theta_ref_rad = 0.0
         
-        # History buffers (for NARX features, 実機側)
         maxlen = self.lags + 10
         self.hist_theta = deque([0.0] * maxlen, maxlen=maxlen)
         self.hist_p1_cmd = deque([0.0] * maxlen, maxlen=maxlen)
@@ -197,10 +175,8 @@ class NARX_MPPI_Controller:
         self.hist_dp1_dt = deque([0.0] * maxlen, maxlen=maxlen)
         self.hist_dp2_dt = deque([0.0] * maxlen, maxlen=maxlen)
         
-        # Pressure delay buffer(将来拡張用)
-        self.press_buf = deque(maxlen=200)  # (time, p1, p2)
+        self.press_buf = deque(maxlen=200)
         
-        # Safety
         self.safety = SafetyMonitor(
             theta_rate_max=5.0,
             theta_abs_max=1.5,
@@ -276,39 +252,31 @@ class NARX_MPPI_Controller:
     # ========== ROS Callbacks ==========
     
     def cb_theta(self, msg: JointState):
-        """関節角度のコールバック(2センサー融合カルマンフィルタ + 異常検知)"""
         if len(msg.position) > max(self.theta_index, self.theta_index_2):
             theta_0 = float(msg.position[self.theta_index_2])  # センサー1
             theta_2 = float(msg.position[self.theta_index])     # センサー2
             
-            # 異常検知: 2つのセンサー間の差分チェック
             diff = abs(theta_0 - theta_2)
             
             with self.lock:
                 if diff > self.theta_diff_threshold:
-                    # 差が大きい場合は前回値に近い方を両方に使う（異常センサーを無視）
                     rospy.logwarn_throttle(
                         1.0, 
                         f"[MPPI] Large sensor diff: {diff:.4f} rad (threshold: {self.theta_diff_threshold:.4f})"
                     )
                     if abs(theta_0 - self.theta_rad) < abs(theta_2 - self.theta_rad):
-                        # センサー0の方が信頼できる
                         self.theta_rad = self.theta_filter.update_dual(theta_0, theta_0)
                     else:
-                        # センサー2の方が信頼できる
                         self.theta_rad = self.theta_filter.update_dual(theta_2, theta_2)
                 else:
-                    # 正常時は両方を融合
                     self.theta_rad = self.theta_filter.update_dual(theta_0, theta_2)
                 
                 self.hist_theta.appendleft(self.theta_rad)
     
     def cb_target(self, msg: Float32):
-        """目標角度のコールバック(deg → rad)"""
         self.theta_ref_rad = math.radians(float(msg.data))
     
     def cb_pressure(self, msg: Quaternion):
-        """圧力測定値のコールバック"""
         t = rospy.get_time()
         p1 = float(msg.x)
         p2 = float(msg.y)
@@ -317,7 +285,7 @@ class NARX_MPPI_Controller:
             self.p1_meas = p1
             self.p2_meas = p2
     
-    # ========== Feature Construction (実機用の1点) ==========
+    # ========== Feature Construction ==========
     
     def build_feature_vector_current(self) -> np.ndarray:
         with self.lock:
@@ -327,7 +295,6 @@ class NARX_MPPI_Controller:
             dp1_hist = list(self.hist_dp1_dt)[:self.lags]
             dp2_hist = list(self.hist_dp2_dt)[:self.lags]
 
-        # 履歴長さの保証
         def pad_hist(hist, fill=0.0):
             if len(hist) == 0:
                 return [fill] * self.lags
@@ -358,34 +325,22 @@ class NARX_MPPI_Controller:
     # ========== MPPI Core ==========
     
     def enforce_constraints(self, p1, p2, p1_prev, p2_prev, dt):
-        """物理制約を適用(レート + ボックス)"""
-        # Rate limit
         dp_max_step = self.dp_max * dt
         p1 = np.clip(p1, p1_prev - dp_max_step, p1_prev + dp_max_step)
         p2 = np.clip(p2, p2_prev - dp_max_step, p2_prev + dp_max_step)
-        # Box constraint
         p1 = np.clip(p1, 0.0, self.p_max)
         p2 = np.clip(p2, 0.0, self.p_max)
         return p1, p2
     
     def cost_function(self, theta, theta_ref, p1, p2, p1_prev, p2_prev,
                       dp1, dp2, k, H):
-        """コスト関数"""
-        # Tracking error
         err = theta_ref - theta
         cost = self.w_tracking * (err ** 2)
         
-        # Terminal cost
         if k == H - 1:
             cost += self.w_tracking * 0.5 * (err ** 2)
-        
-        # Smoothness
         cost += self.w_smooth * (dp1 ** 2 + dp2 ** 2)
-        
-        # Effort
         cost += self.w_effort * (p1 ** 2 + p2 ** 2)
-        
-        # Constraint violation (soft)
         viol = 0.0
         if p1 < 0:
             viol += (-p1) ** 2
@@ -407,12 +362,10 @@ class NARX_MPPI_Controller:
         p1_seq = np.zeros((K, H), dtype=np.float32)
         p2_seq = np.zeros((K, H), dtype=np.float32)
 
-        # 初期状態(各候補で共通)
         theta_k = np.full(K, theta0, dtype=np.float32)
         p1_k = np.full(K, p1_0, dtype=np.float32)
         p2_k = np.full(K, p2_0, dtype=np.float32)
 
-        # 実機の履歴をベースに、各候補用の履歴を複製
         with self.lock:
             theta_hist0 = list(self.hist_theta)[:self.lags]
             p1_hist0 = list(self.hist_p1_cmd)[:self.lags]
@@ -434,7 +387,6 @@ class NARX_MPPI_Controller:
         dp1_hist0 = pad_hist(dp1_hist0, 0.0)
         dp2_hist0 = pad_hist(dp2_hist0, 0.0)
 
-        # shape: (K, lags)
         theta_hist = np.tile(np.array(theta_hist0, dtype=np.float32), (K, 1))
         p1_hist = np.tile(np.array(p1_hist0, dtype=np.float32), (K, 1))
         p2_hist = np.tile(np.array(p2_hist0, dtype=np.float32), (K, 1))
@@ -445,28 +397,23 @@ class NARX_MPPI_Controller:
         in_dim = self.lags * n_feat_per_lag
 
         for h in range(H):
-            # === 1) control を適用 ===
             dp1 = U[:, h, 0]
             dp2 = U[:, h, 1]
 
-            # 前回値を控えてから更新(レート制約用)
             p1_prev = p1_k.copy()
             p2_prev = p2_k.copy()
 
             p1_k = p1_k + dp1
             p2_k = p2_k + dp2
 
-            # 制約適用(1本ずつで十分:K は小さい)
             for i in range(K):
                 p1_k[i], p2_k[i] = self.enforce_constraints(
                     p1_k[i], p2_k[i], p1_prev[i], p2_prev[i], dt
                 )
 
-            # dp/dt を計算
             dp1_dt = (p1_k - p1_prev) / dt
             dp2_dt = (p2_k - p2_prev) / dt
 
-            # === 2) 履歴を更新(最新値を先頭に push) ===
             theta_hist = np.concatenate(
                 [theta_k[:, None], theta_hist[:, :-1]], axis=1
             )
@@ -483,8 +430,6 @@ class NARX_MPPI_Controller:
                 [dp2_dt[:, None], dp2_hist[:, :-1]], axis=1
             )
 
-            # === 3) NARX用特徴量を構築 ===
-            # feat_cols = [theta, p1_cmd, p2_cmd, dp1_cmd_dt, dp2_cmd_dt]
             X_chunks = []
             for k in range(self.lags):
                 X_chunks.append(theta_hist[:, k][:, None])
@@ -494,15 +439,12 @@ class NARX_MPPI_Controller:
                 X_chunks.append(dp2_hist[:, k][:, None])
             X_batch = np.concatenate(X_chunks, axis=1).astype(np.float32)  # (K, in_dim)
 
-            # 正規化
             X_norm = (X_batch - self.mu) / (self.std + 1e-8)
 
-            # === 4) バッチ推論 ===
             with torch.no_grad():
                 Y_batch = self.model(torch.from_numpy(X_norm).to(self.device))
             theta_k = Y_batch.cpu().numpy().flatten()
 
-            # === 5) ログ用に保存 ===
             theta_seq[:, h] = theta_k
             p1_seq[:, h] = p1_k
             p2_seq[:, h] = p2_k
@@ -510,17 +452,14 @@ class NARX_MPPI_Controller:
         return theta_seq, p1_seq, p2_seq
     
     def mppi_step(self):
-        """MPPI制御ステップ"""
         t_start = time.time()
         
-        # 現在状態を取得
         with self.lock:
             theta = self.theta_rad
             theta_ref = self.theta_ref_rad
             p1_prev = self.p1_cmd
             p2_prev = self.p2_cmd
         
-        # Safety check
         is_safe, msg = self.safety.check(theta)
         if not is_safe:
             rospy.logerr(f"[MPPI] Safety violation: {msg}")
@@ -528,17 +467,14 @@ class NARX_MPPI_Controller:
             self.publish_cmd(0.0, 0.0)
             return
         
-        # 制御ノイズサンプル U: (K, H, 2)
         U = np.random.normal(
             loc=0.0,
             scale=self.sigma_u,
             size=(self.K, self.H, 2)
         ).astype(np.float32)
         
-        # Rollout
         theta_seq, p1_seq, p2_seq = self.rollout_batch(theta, p1_prev, p2_prev, U)
         
-        # コスト計算
         dt = self.dt
         J = np.zeros(self.K, dtype=np.float32)
         
@@ -557,26 +493,20 @@ class NARX_MPPI_Controller:
                 p2_h = p2_seq[i, h]
             J[i] = cost
         
-        # MPPI weight computation
         beta = np.min(J)
         w = np.exp(-(J - beta) / max(1e-6, self.temperature))
         w_sum = np.sum(w) + 1e-9
         
-        # 重み付き平均で最初の入力方向を決定
         dU = np.sum(w[:, None, None] * U, axis=0) / w_sum  # (H, 2)
         
-        # Apply first control
         dp1_cmd, dp2_cmd = dU[0, 0], dU[0, 1]
         p1_cmd = p1_prev + dp1_cmd
         p2_cmd = p2_prev + dp2_cmd
         
-        # Final constraint enforcement
         p1_cmd, p2_cmd = self.enforce_constraints(p1_cmd, p2_cmd, p1_prev, p2_prev, dt)
         
-        # Publish
         self.publish_cmd(p1_cmd, p2_cmd)
         
-        # Update history(実機側の履歴)
         with self.lock:
             self.p1_cmd = p1_cmd
             self.p2_cmd = p2_cmd
@@ -590,16 +520,9 @@ class NARX_MPPI_Controller:
             self.hist_dp1_dt.appendleft(dp1_dt)
             self.hist_dp2_dt.appendleft(dp2_dt)
         
-        # Performance monitoring
         comp_time = time.time() - t_start
         self.comp_time_buf.append(comp_time)
-        # 制御周期の 80% を超えたら一応 warn(今は黙らせてもOK)
-        # if comp_time > dt * 0.8:
-        #     rospy.logwarn(
-        #         f"[MPPI] Computation time high: {comp_time*1000:.1f}ms (limit: {dt*1000:.1f}ms)"
-        #     )
-        
-        # Logging
+
         if self.log_path:
             err = theta_ref - theta
             self.log_buffer.append({
@@ -619,9 +542,7 @@ class NARX_MPPI_Controller:
     # ========== Command Publishing ==========
     
     def publish_cmd(self, p1, p2):
-        """圧力指令を出力(ハード側スケーリング込み)"""
         msg = Quaternion()
-        # MPa → DAC値への変換(4096 / 0.9)
         msg.x = float(p1) * 4096.0 / 0.9
         msg.y = float(p2) * 4096.0 / 0.9
         msg.z = 0.0
@@ -650,7 +571,7 @@ class NARX_MPPI_Controller:
         rospy.loginfo(f"[MPPI] Logging to: {self.log_path}")
     
     def logging_worker(self):
-        rate = rospy.Rate(10)  # 10Hz 書き込み
+        rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             if len(self.log_buffer) > 0:
                 batch = []
@@ -666,14 +587,12 @@ class NARX_MPPI_Controller:
     # ========== Main Loop ==========
     
     def spin(self):
-        """メインループ"""
         rate = rospy.Rate(self.rate_hz)
         frame_count = 0
         
         rospy.loginfo("[MPPI] Starting control loop...")
         self.pub_status.publish(String("running"))
         
-        # Warmup period
         warmup_duration = 2.0  # seconds
         warmup_start = rospy.get_time()
         

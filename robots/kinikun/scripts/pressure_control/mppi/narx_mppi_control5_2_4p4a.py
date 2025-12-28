@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-narx_mppi_controller_production.py
-Production2モデル用の実時間MPPI制御ノード（2系統版）
-
-Features:
-- 2つの独立したMPPI制御系統（p1,p2 と p3,p4）
-- GPU並列推論による高速化
-- 2センサー融合カルマンフィルタによるノイズ除去
-- 安全監視機構
-- 非同期ロギング
-
-"""
 import os, json, time, math, threading
 from collections import deque
 from typing import Tuple
@@ -29,7 +17,6 @@ import torch.nn as nn
 # ==================== Utility Classes ====================
 
 class DualSensorKalmanFilter:
-    """2センサー融合カルマンフィルタ"""
     def __init__(self, process_noise=1e-5, 
                  measurement_noise_1=5e-4, 
                  measurement_noise_2=5e-4):
@@ -40,7 +27,6 @@ class DualSensorKalmanFilter:
         self.x = 0.0
     
     def update_dual(self, z1, z2):
-        """2つの測定値で更新"""
         P_pred = self.P + self.Q
         K1 = P_pred / (P_pred + self.R1)
         x_temp = self.x + K1 * (z1 - self.x)
@@ -56,7 +42,6 @@ class DualSensorKalmanFilter:
 
 
 class SafetyMonitor:
-    """簡易安全監視"""
     def __init__(self, theta_rate_max=0.3, theta_abs_max=1.5,
                  enable_stuck_check=False, stuck_count_max=2000):
         self.last_theta = 0.0
@@ -115,7 +100,6 @@ class MLP_NARX(nn.Module):
 # ==================== Control System Class ====================
 
 class ControlSystem:
-    """単一の制御系統（1つのアクチュエータペア用）"""
     def __init__(self, name, model, meta, device, dt, mppi_params, 
                  theta_diff_threshold=0.1):
         self.name = name
@@ -178,7 +162,6 @@ class ControlSystem:
         self.lock = threading.Lock()
     
     def update_theta(self, theta_1, theta_2):
-        """角度センサー更新"""
         diff = abs(theta_1 - theta_2)
         with self.lock:
             if diff > self.theta_diff_threshold:
@@ -195,17 +178,14 @@ class ControlSystem:
             self.hist_theta.appendleft(self.theta_rad)
     
     def set_target(self, theta_ref_rad):
-        """目標角度設定"""
         self.theta_ref_rad = theta_ref_rad
     
     def update_pressure(self, p1, p2):
-        """圧力測定値更新"""
         with self.lock:
             self.p1_meas = p1
             self.p2_meas = p2
     
     def enforce_constraints(self, p1, p2, p1_prev, p2_prev):
-        """物理制約適用"""
         dp_max_step = self.dp_max * self.dt
         p1 = np.clip(p1, p1_prev - dp_max_step, p1_prev + dp_max_step)
         p2 = np.clip(p2, p2_prev - dp_max_step, p2_prev + dp_max_step)
@@ -215,7 +195,6 @@ class ControlSystem:
     
     def cost_function(self, theta, theta_ref, p1, p2, p1_prev, p2_prev,
                       dp1, dp2, k, H):
-        """コスト関数"""
         err = theta_ref - theta
         cost = self.w_tracking * (err ** 2)
         
@@ -239,7 +218,6 @@ class ControlSystem:
         return cost
     
     def rollout_batch(self, theta0, p1_0, p2_0, U):
-        """バッチロールアウト"""
         K, H = U.shape[0], U.shape[1]
         
         theta_seq = np.zeros((K, H), dtype=np.float32)
@@ -323,7 +301,6 @@ class ControlSystem:
         return theta_seq, p1_seq, p2_seq
     
     def mppi_step(self):
-        """MPPI制御ステップ"""
         with self.lock:
             theta = self.theta_rad
             theta_ref = self.theta_ref_rad
@@ -400,7 +377,6 @@ class ControlSystem:
 # ==================== Main Controller ====================
 
 class NARX_MPPI_Controller:
-    """2系統MPPI制御ノード"""
     
     def __init__(self):
         rospy.init_node('narx_mppi_controller_dual', anonymous=False)
@@ -508,7 +484,6 @@ class NARX_MPPI_Controller:
         self.model.eval()
     
     def cb_theta(self, msg: JointState):
-        """両システムの角度センサー更新"""
         if len(msg.position) > max(self.theta_index, self.theta_index_2, 
                                     self.theta_index_3, self.theta_index_4):
             # System 1
@@ -524,15 +499,12 @@ class NARX_MPPI_Controller:
             self.system2.update_theta(theta_3, theta_4_corrected)
     
     def cb_target(self, msg: Float32):
-        """System1の目標角度"""
         self.system1.set_target(math.radians(float(msg.data)))
     
     def cb_target_2(self, msg: Float32):
-        """System2の目標角度"""
         self.system2.set_target(math.radians(float(msg.data)))
     
     def cb_pressure(self, msg: Quaternion):
-        """圧力測定値"""
         p1 = float(msg.x)
         p2 = float(msg.y)
         p3 = float(msg.z)
@@ -541,7 +513,6 @@ class NARX_MPPI_Controller:
         self.system2.update_pressure(p3, p4)
     
     def publish_cmd(self, p1, p2, p3, p4):
-        """4つの圧力指令を出力"""
         msg = Quaternion()
         msg.x = float(p1) * 4096.0 / 0.9
         msg.y = float(p2) * 4096.0 / 0.9
@@ -583,7 +554,6 @@ class NARX_MPPI_Controller:
             rate.sleep()
     
     def spin(self):
-        """メインループ"""
         rate = rospy.Rate(self.rate_hz)
         frame_count = 0
         
@@ -614,17 +584,14 @@ class NARX_MPPI_Controller:
                 if frame_count % self.frame_skip == 0:
                     t_start = time.time()
                     
-                    # 両システムを制御
                     p1, p2, log1 = self.system1.mppi_step()
                     p3, p4, log2 = self.system2.mppi_step()
                     
-                    # コマンド出力
                     self.publish_cmd(p1, p2, p3, p4)
                     
                     comp_time = time.time() - t_start
                     self.comp_time_buf.append(comp_time)
                     
-                    # ログ
                     if self.log_path:
                         self.log_buffer.append({
                             't': rospy.get_time(),
