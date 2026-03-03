@@ -2,14 +2,14 @@
 import rospy
 import sys
 import math # mathモジュールをインポート
-from geometry_msgs.msg import Vector3
+from geometry_msgs.msg import Vector3, Quaternion
 
 DURATION = 10.0  # 目標値までの変化にかける秒数（よりゆっくり）
 FREQUENCY = 10   # 更新頻度（Hz）
 PAUSE_TIME = 2.0 # 目標値到達後の停止時間（秒）
 
 # p1_value と p2_value の切り替え目標値
-TARGET_VALUES = [(0.1, 0.65), (0.65, 0.1)]  # 交互に切り替え
+TARGET_VALUES = [(0, 0.3), (0.3, 0)]  # 交互に切り替え
 
 def sin_ease_update(start, end, duration, frequency):
     """指定の開始と終了値の間をsin関数で補間してリストを返す"""
@@ -32,7 +32,7 @@ def main():
     rospy.init_node('param_loader', anonymous=True)
 
     # Publisherの設定
-    pub_v1v2 = rospy.Publisher('mpa_cmd', Vector3, queue_size=10)
+    pub_v1v2 = rospy.Publisher('mpa_cmd', Quaternion, queue_size=10)
 
     rate = rospy.Rate(FREQUENCY)  # 更新頻度で実行
 
@@ -57,9 +57,11 @@ def main():
                 v1_value = p1 * 4096 / 0.9
                 v2_value = p2 * 4096 / 0.9
 
-                mpa_cmd_msg = Vector3()
+                mpa_cmd_msg = Quaternion()
                 mpa_cmd_msg.x = v1_value
                 mpa_cmd_msg.y = v2_value
+                mpa_cmd_msg.z = v1_value
+                mpa_cmd_msg.w = v2_value
 
                 # パラメータの更新とメッセージのPublish
                 rospy.set_param('/p1_value', p1)

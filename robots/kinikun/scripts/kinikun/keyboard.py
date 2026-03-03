@@ -57,8 +57,14 @@ h:  halt (force stop motor)
      a           s           d           ]
 (move left)  (backward) (move right) (move down)
 
-        z               x               n                  m
+        v               b               n                  m
 (air1 increase)   (air1 decrease) (air2 increase)   (air2 decrease)
+        j               k               u                  i
+(air3 increase)   (air3 decrease) (air4 increase)   (air4 decrease)
+        1               2               3                  4
+(target1 +step)   (target1 -step) (target2 +step)   (target2 -step)
+        c
+(reset all MPA to 0.20 MPa)
 
 Please don't have caps lock on.
 CTRL+c to quit
