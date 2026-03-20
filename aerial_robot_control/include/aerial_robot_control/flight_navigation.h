@@ -63,6 +63,7 @@ namespace aerial_robot_navigation
 
     inline uint8_t getNaviState(){  return navi_state_;}
     inline void setNaviState(const uint8_t  state){ navi_state_ = state;}
+    virtual bool isInflightState();
 
     inline uint8_t getXyControlMode(){  return (uint8_t)xy_control_mode_;}
     inline void setXyControlMode(uint8_t mode){  xy_control_mode_ = mode;}
@@ -353,8 +354,8 @@ namespace aerial_robot_navigation
     void simpleMoveBaseGoalCallback(const geometry_msgs::PoseStampedConstPtr & msg);
     void singleGoalCallback(const geometry_msgs::PoseStampedConstPtr & msg);
     void pathCallback(const nav_msgs::PathConstPtr & msg);
-    void naviCallback(const aerial_robot_msgs::FlightNavConstPtr & msg);
-    void joyStickControl(const sensor_msgs::JoyConstPtr & joy_msg);
+    virtual void naviCallback(const aerial_robot_msgs::FlightNavConstPtr & msg);
+    virtual void joyStickControl(const sensor_msgs::JoyConstPtr & joy_msg);
     void batteryCheckCallback(const std_msgs::Float32ConstPtr &msg);
 
     virtual void halt() {}
