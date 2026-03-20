@@ -30,6 +30,9 @@ catkin_package(
     aerial_robot_estimation
     aerial_robot_model
     dynamic_reconfigure
+    diagnostic_msgs
+    roscpp
+    aerial_robot_msgs
   INCLUDE_DIRS include
   LIBRARIES kinikun_controller_pluginlib
 )

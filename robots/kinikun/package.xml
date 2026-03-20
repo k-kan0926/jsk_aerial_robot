@@ -32,6 +32,7 @@
   <run_depend>pluginlib</run_depend>
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>cfs_sensor</run_depend>
+  <run_depend>mocap_optitrack</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
